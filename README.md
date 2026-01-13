@@ -1,24 +1,46 @@
-# README
+# Job Tracker
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+A personal job application tracker with AI-powered cover letter generation.
 
-Things you may want to cover:
+## Features
 
-* Ruby version
+- **Paste & Parse** — paste a job posting, AI extracts company, title, location, skills, etc.
+- **Cover Letter Generation** — generates structured cover letters using your resume and job details
+- **Status Workflow** — track applications through saved → applied → interviewing → offer/rejected
+- **Dashboard** — filter by status, see all applications at a glance
 
-* System dependencies
+## Tech Stack
 
-* Configuration
+- Ruby on Rails 8.1
+- SQLite
+- Tailwind CSS
+- Stimulus (for instant UI updates)
+- OpenRouter API (free models)
 
-* Database creation
+## Setup
 
-* Database initialization
+```bash
+# Install dependencies
+bundle install
 
-* How to run the test suite
+# Setup database
+bin/rails db:setup
 
-* Services (job queues, cache servers, search engines, etc.)
+# Add your OpenRouter API key
+bin/rails credentials:edit
+# Add:
+# openrouter:
+#   api_key: your-key-here
 
-* Deployment instructions
+# Run the server
+bin/dev
+```
 
-* ...
+Get an API key at [openrouter.ai/keys](https://openrouter.ai/keys)
+
+## Usage
+
+1. Add your resume at `/resume`
+2. Create applications manually or use "Paste & Parse" to extract from job postings
+3. Generate cover letters with one click
+4. Track status as you progress through the hiring process

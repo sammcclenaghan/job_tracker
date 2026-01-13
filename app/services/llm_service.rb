@@ -113,10 +113,25 @@ class LlmService
 
     return response if response[:error]
 
-    { cover_letter: response[:content] }
+    { cover_letter: clean_text(response[:content]) }
   end
 
   private
+
+  def clean_text(text)
+    return text if text.nil?
+
+    text
+      .gsub("‑", "-")           # non-breaking hyphen to regular hyphen
+      .gsub("–", "-")           # en-dash to hyphen
+      .gsub("—", "-")           # em-dash to hyphen
+      .gsub(" %", "%")          # remove space before percent
+      .gsub(" ,", ",")          # remove space before comma
+      .gsub(/\*\*([^*]+)\*\*/, '\1')  # remove markdown bold
+      .gsub(/\*([^*]+)\*/, '\1')      # remove markdown italic
+      .gsub(/^- /, "• ")        # convert markdown bullets to bullet character
+      .strip
+  end
 
   def chat(messages:, temperature: 0.7)
     conn = Faraday.new(url: OPENROUTER_URL) do |f|
