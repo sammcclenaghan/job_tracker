@@ -1,0 +1,9 @@
+<header class="fixed top-0 left-0 right-0 h-16 bg-gray-900 border-b border-gray-800 z-50">
+  <nav class="container mx-auto px-5 h-full flex items-center justify-between">
+    <%= link_to "Job Tracker", root_path, class: "text-white font-semibold text-lg hover:text-gray-300 transition-colors" %>
+
+    <%= link_to new_job_application_path, class: "bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors" do %>
+      New Application
+    <% end %>
+  </nav>
+</header>
