@@ -69,9 +69,16 @@ class JobApplicationsController < ApplicationController
   def update_status
     if @job_application.update(status: params[:status])
       @job_application.update(applied_at: Time.current) if params[:status] == "applied" && @job_application.applied_at.nil?
-      redirect_to @job_application, notice: "Status updated to #{params[:status].capitalize}"
+      
+      respond_to do |format|
+        format.json { head :ok }
+        format.html { redirect_to @job_application, notice: "Status updated to #{params[:status].capitalize}" }
+      end
     else
-      redirect_to @job_application, alert: "Failed to update status"
+      respond_to do |format|
+        format.json { head :unprocessable_entity }
+        format.html { redirect_to @job_application, alert: "Failed to update status" }
+      end
     end
   end
 
