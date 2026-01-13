@@ -1,0 +1,87 @@
+<%# Shared form partial for new and edit %>
+<%= form_with model: @job_application, class: "space-y-6" do |f| %>
+  <% if @job_application.errors.any? %>
+    <div class="bg-red-900/50 border border-red-700 text-red-200 px-4 py-3 rounded-lg">
+      <h3 class="font-medium mb-2"><%= pluralize(@job_application.errors.count, "error") %> prevented saving:</h3>
+      <ul class="list-disc list-inside text-sm">
+        <% @job_application.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <%# Company Name %>
+    <div>
+      <%= f.label :company_name, class: "block text-sm font-medium text-gray-300 mb-1" %>
+      <%= f.text_field :company_name, required: true, class: "w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" %>
+    </div>
+
+    <%# Job Title %>
+    <div>
+      <%= f.label :job_title, class: "block text-sm font-medium text-gray-300 mb-1" %>
+      <%= f.text_field :job_title, required: true, class: "w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" %>
+    </div>
+
+    <%# Location %>
+    <div>
+      <%= f.label :location, class: "block text-sm font-medium text-gray-300 mb-1" %>
+      <%= f.text_field :location, placeholder: "e.g., San Francisco, CA", class: "w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" %>
+    </div>
+
+    <%# Work Arrangement %>
+    <div>
+      <%= f.label :work_arrangement, class: "block text-sm font-medium text-gray-300 mb-1" %>
+      <%= f.select :work_arrangement, options_for_select([["Select...", ""], ["Remote", "remote"], ["Hybrid", "hybrid"], ["Onsite", "onsite"]], @job_application.work_arrangement), {}, class: "w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" %>
+    </div>
+
+    <%# Salary Range %>
+    <div>
+      <%= f.label :salary_range, class: "block text-sm font-medium text-gray-300 mb-1" %>
+      <%= f.text_field :salary_range, placeholder: "e.g., $120k - $150k", class: "w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" %>
+    </div>
+
+    <%# Job URL %>
+    <div>
+      <%= f.label :job_url, "Job URL", class: "block text-sm font-medium text-gray-300 mb-1" %>
+      <%= f.url_field :job_url, placeholder: "https://...", class: "w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" %>
+    </div>
+
+    <%# Contact Email %>
+    <div>
+      <%= f.label :contact_email, class: "block text-sm font-medium text-gray-300 mb-1" %>
+      <%= f.email_field :contact_email, placeholder: "recruiter@company.com", class: "w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" %>
+    </div>
+
+    <%# Status %>
+    <div>
+      <%= f.label :status, class: "block text-sm font-medium text-gray-300 mb-1" %>
+      <%= f.select :status, options_for_select(JobApplication::STATUSES.map { |s| [s.capitalize, s] }, @job_application.status), {}, class: "w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" %>
+    </div>
+  </div>
+
+  <%# Job Description %>
+  <div>
+    <%= f.label :job_description, class: "block text-sm font-medium text-gray-300 mb-1" %>
+    <%= f.text_area :job_description, rows: 6, placeholder: "Paste or type the job description...", class: "w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" %>
+  </div>
+
+  <%# Application Instructions %>
+  <div>
+    <%= f.label :application_instructions, class: "block text-sm font-medium text-gray-300 mb-1" %>
+    <%= f.text_area :application_instructions, rows: 3, placeholder: "How to apply, special requirements...", class: "w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" %>
+  </div>
+
+  <%# Notes %>
+  <div>
+    <%= f.label :notes, class: "block text-sm font-medium text-gray-300 mb-1" %>
+    <%= f.text_area :notes, rows: 3, placeholder: "Your personal notes about this application...", class: "w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" %>
+  </div>
+
+  <%# Submit %>
+  <div class="flex items-center gap-4">
+    <%= f.submit class: "bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 rounded-lg transition-colors cursor-pointer" %>
+    <%= link_to "Cancel", (@job_application.persisted? ? job_application_path(@job_application) : root_path), class: "text-gray-400 hover:text-gray-300 transition-colors" %>
+  </div>
+<% end %>

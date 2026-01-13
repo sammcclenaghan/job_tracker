@@ -1,7 +1,7 @@
 Rails.application.routes.draw do
   root "dashboard#index"
 
-  resources :job_applications do
+  resources :job_applications, except: [:index] do
     member do
       post :parse
       post :generate_cover_letter

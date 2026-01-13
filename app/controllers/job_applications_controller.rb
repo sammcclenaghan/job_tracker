@@ -1,8 +1,5 @@
 class JobApplicationsController < ApplicationController
-  def index
-    @job_applications = JobApplication.recent
-    @job_applications = @job_applications.by_status(params[:status]) if params[:status].present?
-  end
+  before_action :set_job_application, only: [:show, :edit, :update, :destroy, :update_status, :generate_cover_letter]
 
   def show
   end
@@ -77,15 +74,41 @@ class JobApplicationsController < ApplicationController
       redirect_to @job_application, alert: "Failed to update status"
     end
   end
+
+  def generate_cover_letter
+    resume = Resume.first
+    if resume.nil? || resume.content.blank?
+      redirect_to @job_application, alert: "Please add your resume first."
+      return
+    end
+
+    service = OpenaiService.new
+    result = service.generate_cover_letter(
+      resume: resume.content,
+      job_title: @job_application.job_title,
+      company_name: @job_application.company_name,
+      job_description: @job_application.job_description
+    )
+
+    if result[:error]
+      redirect_to @job_application, alert: result[:error]
+    else
+      @job_application.update(cover_letter: result[:cover_letter])
+      redirect_to @job_application, notice: "Cover letter generated!"
+    end
+  end
+
   def destroy
     @job_application.destroy
-    redirect_to job_applications_url, notice: "Job application was successfully deleted."
+    redirect_to root_path, notice: "Job application was successfully deleted."
   end
 
   private
+
   def set_job_application
     @job_application = JobApplication.find(params[:id])
   end
+
   def job_application_params
     params.require(:job_application).permit(
       :company_name, :job_title, :location, :work_arrangement,
