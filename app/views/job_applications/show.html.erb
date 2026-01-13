@@ -88,6 +88,20 @@
     </div>
   </div>
 
+  <%# Skills %>
+  <% if @job_application.skills_list.any? %>
+    <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 mb-6">
+      <h3 class="text-sm font-medium text-gray-400 mb-3">Required Skills</h3>
+      <div class="flex flex-wrap gap-2">
+        <% @job_application.skills_list.each do |skill| %>
+          <span class="text-xs font-medium px-2.5 py-1 rounded-full bg-gray-800 text-gray-300 border border-gray-700">
+            <%= skill %>
+          </span>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
   <%# Job Description %>
   <% if @job_application.job_description.present? %>
     <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 mb-6">
