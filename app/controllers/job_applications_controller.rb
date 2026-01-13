@@ -28,7 +28,7 @@ class JobApplicationsController < ApplicationController
       flash.now[:alert] = "Please paste a job posting"
       return render :new_from_paste, status: :unprocessable_entity
     end
-    service = OpenaiService.new
+    service = LlmService.new
     result = service.parse_job_posting(raw_content)
     if result[:error]
       @job_application = JobApplication.new
@@ -82,7 +82,7 @@ class JobApplicationsController < ApplicationController
       return
     end
 
-    service = OpenaiService.new
+    service = LlmService.new
     result = service.generate_cover_letter(
       resume: resume.content,
       job_title: @job_application.job_title,
