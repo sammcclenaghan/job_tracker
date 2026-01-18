@@ -10,6 +10,7 @@ class JobApplication < ApplicationRecord
   before_validation :set_default_status
 
   serialize :skills, coder: JSON
+  serialize :skills_analysis, coder: JSON
 
   scope :by_status, ->(status) { where(status: status) }
   scope :recent, -> { order(created_at: :desc) }
@@ -40,6 +41,25 @@ class JobApplication < ApplicationRecord
   end
   def skills_list
     skills.is_a?(Array) ? skills : []
+  end
+
+  def has_skills_analysis?
+    skills_analysis.is_a?(Hash) && skills_analysis.any?
+  end
+
+  def matching_skills
+    return [] unless has_skills_analysis?
+    skills_analysis["matching_skills"] || []
+  end
+
+  def skills_to_highlight
+    return [] unless has_skills_analysis?
+    skills_analysis["skills_to_highlight"] || []
+  end
+
+  def skills_to_develop
+    return [] unless has_skills_analysis?
+    skills_analysis["skills_to_develop"] || []
   end
   private
   def set_default_status

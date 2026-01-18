@@ -43,7 +43,82 @@ class LlmService
     { error: "Failed to parse response: #{e.message}" }
   end
 
-  def generate_cover_letter(resume:, job_title:, company_name:, job_description:)
+  def generate_skills_analysis(resume:, job_title:, job_description:, required_skills:)
+    response = chat(
+      messages: [
+        {
+          role: "system",
+          content: <<~PROMPT
+            You are an expert career coach and resume analyst. Your job is to compare a candidate's resume against a job posting and provide a detailed skills gap analysis.
+
+            Analyze the resume against the job requirements and return a JSON object with these three categories:
+
+            1. "matching_skills" - Array of objects for skills the candidate HAS that match job requirements
+               Each object: { "skill": "skill name", "explanation": "brief explanation of where this appears in their resume and how it matches" }
+
+            2. "skills_to_highlight" - Array of objects for skills/experiences the candidate should EMPHASIZE in their application
+               Each object: { "skill": "skill/experience name", "explanation": "why this should be highlighted and how to position it" }
+               These should be strategic recommendations based on what the job posting emphasizes most.
+
+            3. "skills_to_develop" - Array of objects for skills the candidate may be MISSING or should address
+               Each object: { "skill": "skill name", "explanation": "why this matters for the role and suggestions for addressing it" }
+               Include suggestions like: transferable skills, quick learning opportunities, or how to acknowledge the gap positively.
+
+            Guidelines:
+            - Be specific and actionable in explanations
+            - Reference specific parts of the resume when possible
+            - For skills_to_highlight, focus on what would make the candidate stand out
+            - For skills_to_develop, be constructive - suggest how gaps could be addressed
+            - Limit each category to the most important 3-6 items
+            - Return ONLY valid JSON, no markdown or extra text
+          PROMPT
+        },
+        {
+          role: "user",
+          content: <<~CONTENT
+            POSITION: #{job_title}
+
+            JOB DESCRIPTION:
+            #{job_description}
+
+            REQUIRED SKILLS FROM JOB POSTING:
+            #{required_skills.join(", ")}
+
+            CANDIDATE'S RESUME:
+            #{resume}
+          CONTENT
+        }
+      ],
+      temperature: 0.4
+    )
+
+    return response if response[:error]
+
+    JSON.parse(response[:content])
+  rescue JSON::ParserError => e
+    { error: "Failed to parse skills analysis: #{e.message}" }
+  end
+
+  def generate_cover_letter(resume:, job_title:, company_name:, job_description:, skills_analysis: nil)
+    skills_guidance = if skills_analysis.present?
+      <<~SKILLS_GUIDANCE
+
+        IMPORTANT - SKILLS ANALYSIS TO INCORPORATE:
+        You have been provided with a skills analysis. Use this to write a more targeted cover letter:
+
+        SKILLS TO HIGHLIGHT (emphasize these prominently):
+        #{format_skills_for_prompt(skills_analysis["skills_to_highlight"])}
+
+        MATCHING SKILLS (weave these naturally into your examples):
+        #{format_skills_for_prompt(skills_analysis["matching_skills"])}
+
+        SKILLS GAPS TO ADDRESS (if relevant, acknowledge growth mindset or transferable skills):
+        #{format_skills_for_prompt(skills_analysis["skills_to_develop"])}
+      SKILLS_GUIDANCE
+    else
+      ""
+    end
+
     response = chat(
       messages: [
         {
@@ -90,6 +165,7 @@ class LlmService
             - Keep it conversational but professional
             - No placeholder brackets in the final output - fill everything in
             - Total length: 300-450 words
+            #{skills_guidance}
           PROMPT
         },
         {
@@ -117,6 +193,18 @@ class LlmService
   end
 
   private
+
+  def format_skills_for_prompt(skills_array)
+    return "None provided" if skills_array.blank?
+    
+    skills_array.map do |item|
+      if item.is_a?(Hash)
+        "- #{item['skill']}: #{item['explanation']}"
+      else
+        "- #{item}"
+      end
+    end.join("\n")
+  end
 
   def clean_text(text)
     return text if text.nil?
