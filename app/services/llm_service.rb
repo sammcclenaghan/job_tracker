@@ -1,6 +1,7 @@
 class LlmService
   OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions".freeze
-  MODEL = "openai/gpt-oss-120b:free".freeze
+  PARSING_MODEL = "openai/gpt-oss-120b:free".freeze
+  WRITING_MODEL = "xiaomi/mimo-v2-flash:free".freeze
 
   def initialize
     @api_key = Rails.application.credentials.openrouter.api_key
@@ -120,49 +121,64 @@ class LlmService
     end
 
     response = chat(
+      model: WRITING_MODEL,
       messages: [
         {
           role: "system",
           content: <<~PROMPT
-            You are an expert cover letter writer. Write cover letters that follow this EXACT structure:
+            You are an expert cover letter writer for co-op students and new graduates. Write cover letters that follow this structure:
 
-            PARAGRAPH 1 - INTRODUCTION (2 sentences):
-            Sentence 1: "I am a [2-3 descriptive adjectives] [Current/Target Role] with [X years] of experience interested in learning more about [Company]'s [Team/Department from job posting]."
-            Sentence 2: "Over the last [time period], I've [major achievement with specific number/metric] by [how you did it] and also [secondary achievement or side project]."
+            PARAGRAPH 1 - INTRODUCTION (2-3 sentences):
+            - Identify yourself as a student: year, program, and university (from the resume)
+            - Mention your internship/co-op experience count (e.g., "with three internships" or "with 12 months of industry experience")
+            - State the position and team/company you're applying for
+            - Lead with your most impressive relevant achievement with a specific metric
+            Example: "As a third-year Computer Science co-op student at [University] with three internships under my belt, I'm applying for the [Position] at [Company]. In my most recent role, I [achievement with metric]."
 
-            PARAGRAPH 2 - TRANSITION (1-2 sentences):
-            "And now I'm excited to continue my journey by contributing and growing at [Company]. There are [two/three] things that make me the perfect fit for this position:"
+            PARAGRAPH 2 - TRANSITION (1 sentence max):
+            Create a brief, natural bridge to your qualifications.
+            DO NOT write "There are X things that make me the perfect fit" - this sounds robotic.
+            Keep this to one sentence that flows naturally into the body paragraphs.
 
             PARAGRAPH 3 - FIRST QUALIFICATION:
-            Start with "First, " then connect a personal trait or theme (curiosity, initiative, leadership) to a specific story from the resume. Include:
+            Connect a personal trait or theme (curiosity, initiative, problem-solving) to a specific story from the resume. Include:
             - The theme/trait that drives you
             - A specific example with context
             - Concrete outcomes or skills gained
-            - How this helps you in the role
+            - How this prepares you for the role
+            DO NOT start with "First, " - vary your paragraph openings.
 
             PARAGRAPH 4 - SECOND QUALIFICATION:
-            Start with "Second, " then highlight relevant experience. Include:
+            Highlight relevant technical experience. Include:
             - The type of experience you have
-            - Multiple specific examples (3-4 short ones)
+            - Multiple specific examples (3-4 short ones) with technologies used
             - Growth or increased responsibility over time
+            DO NOT start with "Second, " - find a natural transition.
 
             PARAGRAPH 5 - WHY THIS COMPANY:
-            Start with "Finally, " or "Third, " then explain why you want THIS company:
-            - Reference their vision, values, or culture (and why it resonates personally)
-            - Mention industry interest or recent company news
-            - Connect it back to your background or interests
+            Explain why you want THIS company specifically:
+            - Reference a specific product, project, initiative, or news item
+            - Explain WHY it matters to you personally (connect to your values or past experience)
+            - Show how your skills could contribute to that specific thing
+            DO NOT start with "Finally, " or "Third, ".
 
-            PARAGRAPH 6 - CONCLUSION (2 sentences):
-            "I think you'll find that my experience is a really good fit for [Company] and specifically this position. I'm ready to take my skills to the next level with your team and look forward to hearing back."
+            PARAGRAPH 6 - CONCLUSION (1-2 sentences):
+            Express confidence and enthusiasm directly. Suggest next steps.
+            DO NOT write "I think you'll find..." - this sounds uncertain.
+            Example: "I'd love to discuss how my experience with [skill] could contribute to [specific company goal]."
 
             Sign off with:
             "Thanks,
             [First name from resume]"
 
             RULES:
+            - Write like a person, not a template. Read it aloud - if it sounds robotic, rewrite it.
             - Use specific numbers and metrics wherever possible
             - Use the same terminology as the job description
             - Keep it conversational but professional
+            - VARY sentence openings - do not start more than 2 consecutive sentences with "I"
+            - AVOID clichés: "passionate about", "excited to apply", "results-driven", "detail-oriented", "hit the ground running"
+            - Do NOT repeat achievements - each example should be unique
             - No placeholder brackets in the final output - fill everything in
             - Total length: 300-450 words
             #{skills_guidance}
@@ -196,7 +212,7 @@ class LlmService
 
   def format_skills_for_prompt(skills_array)
     return "None provided" if skills_array.blank?
-    
+
     skills_array.map do |item|
       if item.is_a?(Hash)
         "- #{item['skill']}: #{item['explanation']}"
@@ -221,7 +237,7 @@ class LlmService
       .strip
   end
 
-  def chat(messages:, temperature: 0.7)
+  def chat(messages:, model: PARSING_MODEL, temperature: 0.7)
     conn = Faraday.new(url: OPENROUTER_URL) do |f|
       f.request :json
       f.response :json
@@ -234,7 +250,7 @@ class LlmService
       req.headers["HTTP-Referer"] = "http://localhost:3000"
       req.headers["X-Title"] = "Job Tracker"
       req.body = {
-        model: MODEL,
+        model: model,
         messages: messages,
         temperature: temperature
       }.to_json
