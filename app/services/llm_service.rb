@@ -128,19 +128,16 @@ class LlmService
           content: <<~PROMPT
             You are an expert cover letter writer for co-op students and new graduates. Write cover letters that follow this structure:
 
-            PARAGRAPH 1 - INTRODUCTION (2-3 sentences):
-            - Identify yourself as a student: year, program, and university (from the resume)
-            - Mention your internship/co-op experience count (e.g., "with three internships" or "with 12 months of industry experience")
-            - State the position and team/company you're applying for
-            - Lead with your most impressive relevant achievement with a specific metric
-            Example: "As a third-year Computer Science co-op student at [University] with three internships under my belt, I'm applying for the [Position] at [Company]. In my most recent role, I [achievement with metric]."
+            PARAGRAPH 1 - Introduction
+            - Identify who you are and the position to which you applied.
+            - State your degree, major, college affiliation and graduation date
+            - Explain WHY the company matters to you personally (connect to your values or past experience)
+            Example: "As a third-year Computer Science co-op student at [University] with three internships under my belt, I'm applying for the [Position] at [Company]. [Company]'s commitment to cutting-edge technology is compelling, something like that"
+            - In the closing sentence, make a strong claim about your candidacy that states 1-3 qualifications you will discuss
+            and provide evidence of in the body paragraphs of your letter- Ensure the qualifications listed directly correlate
+            to the job description for the position to which you have written the letter
 
-            PARAGRAPH 2 - TRANSITION (1 sentence max):
-            Create a brief, natural bridge to your qualifications.
-            DO NOT write "There are X things that make me the perfect fit" - this sounds robotic.
-            Keep this to one sentence that flows naturally into the body paragraphs.
-
-            PARAGRAPH 3 - FIRST QUALIFICATION:
+            PARAGRAPH 2 - FIRST QUALIFICATION:
             Connect a personal trait or theme (curiosity, initiative, problem-solving) to a specific story from the resume. Include:
             - The theme/trait that drives you
             - A specific example with context
@@ -148,24 +145,21 @@ class LlmService
             - How this prepares you for the role
             DO NOT start with "First, " - vary your paragraph openings.
 
-            PARAGRAPH 4 - SECOND QUALIFICATION:
+            PARAGRAPH 3- SECOND QUALIFICATION:
             Highlight relevant technical experience. Include:
             - The type of experience you have
             - Multiple specific examples (3-4 short ones) with technologies used
             - Growth or increased responsibility over time
+            - Elaborate on the most relevant skills and experiences (education, research, and professional
+            work/intern experience) found in your resume and connect them to the job qualifications versus simply
+            restating your resume.
             DO NOT start with "Second, " - find a natural transition.
 
-            PARAGRAPH 5 - WHY THIS COMPANY:
-            Explain why you want THIS company specifically:
-            - Reference a specific product, project, initiative, or news item
-            - Explain WHY it matters to you personally (connect to your values or past experience)
-            - Show how your skills could contribute to that specific thing
-            DO NOT start with "Finally, " or "Third, ".
-
-            PARAGRAPH 6 - CONCLUSION (1-2 sentences):
+            PARAGRAPH 4 - CONCLUSION (1-2 sentences):
             Express confidence and enthusiasm directly. Suggest next steps.
             DO NOT write "I think you'll find..." - this sounds uncertain.
             Example: "I'd love to discuss how my experience with [skill] could contribute to [specific company goal]."
+            State your interest in interviewing or moving forward in the hiring process.
 
             Sign off with:
             "Thanks,
