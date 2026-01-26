@@ -1,0 +1,49 @@
+saved_application:
+  company_name: Acme Corp
+  job_title: Software Engineer
+  status: saved
+  location: San Francisco, CA
+  work_arrangement: remote
+  job_description: Build cool stuff with Ruby and Rails
+  skills: '["Ruby", "Rails", "PostgreSQL"]'
+
+applied_application:
+  company_name: TechStartup Inc
+  job_title: Full Stack Developer
+  status: applied
+  location: New York, NY
+  work_arrangement: hybrid
+  applied_at: <%= 1.day.ago %>
+  job_description: Work on our web platform
+  skills: '["JavaScript", "React", "Node.js"]'
+
+interviewing_application:
+  company_name: BigTech LLC
+  job_title: Senior Developer
+  status: interviewing
+  location: Seattle, WA
+  work_arrangement: onsite
+  applied_at: <%= 5.days.ago %>
+  job_description: Lead development projects
+  skills: '["Python", "Django", "AWS"]'
+  skills_analysis: '{"matching_skills": [{"skill": "Python", "explanation": "5 years experience"}], "skills_to_highlight": [{"skill": "Leadership", "explanation": "Led team of 4"}], "skills_to_develop": [{"skill": "AWS", "explanation": "Consider certification"}]}'
+
+offer_application:
+  company_name: DreamJob Co
+  job_title: Staff Engineer
+  status: offer
+  location: Austin, TX
+  work_arrangement: remote
+  applied_at: <%= 2.weeks.ago %>
+  job_description: Senior technical leadership role
+  skills: '["Go", "Kubernetes", "Terraform"]'
+
+rejected_application:
+  company_name: NoFit Corp
+  job_title: Junior Developer
+  status: rejected
+  location: Chicago, IL
+  work_arrangement: onsite
+  applied_at: <%= 1.month.ago %>
+  job_description: Entry level position
+  skills: '["Java", "Spring"]'

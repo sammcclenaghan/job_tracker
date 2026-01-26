@@ -1,0 +1,7 @@
+api_key_setting:
+  key: openrouter_api_key
+  value: test_key_12345
+
+theme_setting:
+  key: theme
+  value: dark

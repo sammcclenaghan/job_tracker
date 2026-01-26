@@ -1,0 +1,20 @@
+main_resume:
+  content: |
+    John Doe
+    Software Engineer
+
+    EXPERIENCE
+    Senior Developer at Tech Corp (2020-2024)
+    - Built scalable web applications using Ruby on Rails
+    - Led team of 4 developers
+    - Improved API performance by 40%
+
+    Junior Developer at StartupX (2018-2020)
+    - Full stack development with React and Node.js
+    - Implemented CI/CD pipelines
+
+    SKILLS
+    Ruby, Rails, JavaScript, React, PostgreSQL, AWS, Docker
+
+    EDUCATION
+    BS Computer Science, State University, 2018
