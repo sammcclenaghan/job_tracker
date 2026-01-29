@@ -1,7 +1,7 @@
 class LlmService
   OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions".freeze
   PARSING_MODEL = "openai/gpt-oss-120b:free".freeze
-  WRITING_MODEL = "xiaomi/mimo-v2-flash:free".freeze
+  WRITING_MODEL = "tngtech/deepseek-r1t2-chimera:free".freeze
 
   def initialize
     @api_key = Rails.application.credentials.openrouter.api_key
