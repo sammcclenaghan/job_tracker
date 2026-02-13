@@ -90,12 +90,15 @@ class JobApplicationsController < ApplicationController
     end
 
     service = LlmService.new
+    feedback = params[:feedback].presence
     result = service.generate_cover_letter(
       resume: resume.content,
       job_title: @job_application.job_title,
       company_name: @job_application.company_name,
       job_description: @job_application.job_description,
-      skills_analysis: @job_application.skills_analysis
+      skills_analysis: @job_application.skills_analysis,
+      feedback: feedback,
+      previous_cover_letter: feedback ? @job_application.cover_letter : nil
     )
 
     if result[:error]

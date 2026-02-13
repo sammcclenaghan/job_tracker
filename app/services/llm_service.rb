@@ -100,7 +100,7 @@ class LlmService
     { error: "Failed to parse skills analysis: #{e.message}" }
   end
 
-  def generate_cover_letter(resume:, job_title:, company_name:, job_description:, skills_analysis: nil)
+  def generate_cover_letter(resume:, job_title:, company_name:, job_description:, skills_analysis: nil, feedback: nil, previous_cover_letter: nil)
     skills_guidance = if skills_analysis.present?
       <<~SKILLS_GUIDANCE
 
@@ -128,48 +128,57 @@ class LlmService
           content: <<~PROMPT
             You are an expert cover letter writer for co-op students and new graduates. Write cover letters that follow this structure:
 
-            PARAGRAPH 1 - Introduction
-            - Identify who you are and the position to which you applied.
-            - State your degree, major, college affiliation and graduation date
-            - Explain WHY the company matters to you personally (connect to your values or past experience)
-            Example: "As a third-year Computer Science co-op student at [University] with three internships under my belt, I'm applying for the [Position] at [Company]. [Company]'s commitment to cutting-edge technology is compelling, something like that"
-            - In the closing sentence, make a strong claim about your candidacy that states 1-3 qualifications you will discuss
-            and provide evidence of in the body paragraphs of your letter- Ensure the qualifications listed directly correlate
-            to the job description for the position to which you have written the letter
+            CORE PHILOSOPHY - PAST, PRESENT, FUTURE:
+            Every cover letter must connect three timeframes:
+            - PAST: Your experiences (education, internships, research, projects)
+            - PRESENT: The qualifications those experiences gave you that make you unique NOW
+            - FUTURE: How you will apply those qualifications to create value at this specific company
 
-            PARAGRAPH 2 - FIRST QUALIFICATION:
-            Connect a personal trait or theme (curiosity, initiative, problem-solving) to a specific story from the resume. Include:
-            - The theme/trait that drives you
-            - A specific example with context
-            - Concrete outcomes or skills gained
-            - How this prepares you for the role
+            CRITICAL: Focus on QUALIFICATIONS GAINED, not experiences themselves.
+            BAD: "I was a research assistant with Dr. XXX and collaborated with a PhD student."
+            GOOD: "As a research assistant, I developed expertise in NLP and computer vision through building a Visual Question Answering system, skills I'm eager to apply to [Company]'s image recognition challenges."
+
+            The difference: State WHAT YOU GAINED and HOW IT APPLIES TO THE FUTURE ROLE.
+
+            PARAGRAPH 1 - Introduction:
+            - State your degree, major, institution, and graduation date
+            - Identify the position you're applying for
+            - Explain WHY this company matters to you personally (connect to your values or past experience)
+            - End with a strong claim stating 1-2 qualifications you'll prove in the body paragraphs
+            - These qualifications must directly correlate to the job description
+
+            PARAGRAPH 2 - FIRST QUALIFICATION (unified around ONE theme):
+            Structure: Qualification claim → Supporting experiences → Future application
+            - Open with the specific qualification this paragraph proves (e.g., "expertise in distributed systems" or "ability to translate complex technical concepts")
+            - Provide 1-2 experiences that GAVE you this qualification
+            - For each experience, state WHAT YOU LEARNED/GAINED, not just what you did
+            - Connect explicitly to how this qualification prepares you for THIS role at THIS company
+            - Include specific details that distinguish you from other applicants with similar degrees
             DO NOT start with "First, " - vary your paragraph openings.
 
-            PARAGRAPH 3- SECOND QUALIFICATION:
-            Highlight relevant technical experience. Include:
-            - The type of experience you have
-            - Multiple specific examples (3-4 short ones) with technologies used
-            - Growth or increased responsibility over time
-            - Elaborate on the most relevant skills and experiences (education, research, and professional
-            work/intern experience) found in your resume and connect them to the job qualifications versus simply
-            restating your resume.
+            PARAGRAPH 3 - SECOND QUALIFICATION (unified around ONE theme):
+            Structure: Qualification claim → Supporting experiences → Future application
+            - Open with a different qualification relevant to the job
+            - Draw from different experiences than Paragraph 2 (education, research, internships, projects)
+            - Show growth or increasing responsibility over time
+            - Emphasize the UNIQUE training or approach from your program/experiences
+            - End by connecting this qualification to a specific aspect of the role or company goal
             DO NOT start with "Second, " - find a natural transition.
 
             PARAGRAPH 4 - CONCLUSION (1-2 sentences):
-            Express confidence and enthusiasm directly. Suggest next steps.
-            DO NOT write "I think you'll find..." - this sounds uncertain.
-            Example: "I'd love to discuss how my experience with [skill] could contribute to [specific company goal]."
-            State your interest in interviewing or moving forward in the hiring process.
+            - Express confidence directly (not "I think you'll find...")
+            - Reference a specific skill and how it could contribute to a specific company goal
+            - State interest in interviewing or next steps
 
             Sign off with:
             "Thanks,
             [First name from resume]"
 
             RULES:
-            - Write like a person, not a template. Read it aloud - if it sounds robotic, rewrite it.
+            - Be SPECIFIC: Eliminate any sentence that could be written by anyone with a similar degree
+            - Every experience mentioned must include what qualification it gave you
+            - Use the exact terminology from the job description
             - Use specific numbers and metrics wherever possible
-            - Use the same terminology as the job description
-            - Keep it conversational but professional
             - VARY sentence openings - do not start more than 2 consecutive sentences with "I"
             - AVOID clichés: "passionate about", "excited to apply", "results-driven", "detail-oriented", "hit the ground running"
             - Do NOT repeat achievements - each example should be unique
@@ -177,6 +186,22 @@ class LlmService
             - Total length: 300-450 words
             #{skills_guidance}
           PROMPT
+        },
+        {
+          role: "user",
+          content: "Write a cover letter for a Software Developer Co-op at Fullscript. The role involves Ruby on Rails, testing, and infrastructure work."
+        },
+        {
+          role: "assistant",
+          content: <<~EXAMPLE
+            I'm a Computer Science student at the University of Victoria, graduating in April 2027, and I'm applying for the Software Developer Co-op position at Fullscript. What stood out to me in your developer handbook was the emphasis on craftsmanship—building things carefully, understanding the full lifecycle of a product, and taking responsibility for the code you ship. That mindset closely matches how I've learned to work as a developer.
+
+            I recently spent eight months at Leanpub contributing to a large Ruby on Rails monolith, which gave me a realistic view of maintaining and evolving a production system. Not only did I ship features quickly, I was able to help strengthen the codebase by writing and maintaining tests with RSpec and FactoryBot. I also worked on long-running processes, building a background job tracking system with Redis that kept users informed without tying up application resources. That experience taught me how to balance speed with reliability, and to treat testing as a core part of development rather than an afterthought.
+
+            In addition to application work, I've had hands-on experience with infrastructure and performance. At Trustscience, I re-engineered a file storage system that reduced AWS S3 costs by 15%, and improved query performance by roughly 50% using DynamoDB. I'm comfortable working within real-world constraints like cloud costs and latency, and I enjoy digging into existing systems to make them leaner, faster, and easier to maintain.
+
+            I'd be excited to bring this combination of Rails experience, infrastructure awareness, and care for code quality to the Fullscript team. Thank you for your time and consideration—I'd welcome the opportunity to speak further.
+          EXAMPLE
         },
         {
           role: "user",
@@ -191,10 +216,11 @@ class LlmService
 
             MY RESUME:
             #{resume}
+            #{feedback.present? ? "\nPREVIOUS DRAFT:\n#{previous_cover_letter}\n\nFEEDBACK ON PREVIOUS DRAFT (rewrite the cover letter applying these changes):\n#{feedback}" : ""}
           CONTENT
         }
       ],
-      temperature: 0.7
+      temperature: 0.4
     )
 
     return response if response[:error]
