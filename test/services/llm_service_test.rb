@@ -51,13 +51,10 @@ class LlmServiceTest < ActiveSupport::TestCase
   test "generate_skills_analysis returns parsed analysis" do
     response_json = {
       matching_skills: [
-        { skill: "Ruby", explanation: "5 years experience" }
+        { skill: "Ruby", evidence: "5 years experience" }
       ],
-      skills_to_highlight: [
-        { skill: "Leadership", explanation: "Team lead experience" }
-      ],
-      skills_to_develop: [
-        { skill: "Kubernetes", explanation: "Consider certification" }
+      missing_skills: [
+        { skill: "Kubernetes", suggestion: "Consider certification" }
       ]
     }.to_json
 
@@ -71,8 +68,7 @@ class LlmServiceTest < ActiveSupport::TestCase
     )
 
     assert_kind_of Array, result["matching_skills"]
-    assert_kind_of Array, result["skills_to_highlight"]
-    assert_kind_of Array, result["skills_to_develop"]
+    assert_kind_of Array, result["missing_skills"]
   end
 
   test "generate_skills_analysis returns error on API failure" do
@@ -124,9 +120,8 @@ class LlmServiceTest < ActiveSupport::TestCase
     stub_openrouter_success("Cover letter content")
 
     skills_analysis = {
-      "matching_skills" => [{ "skill" => "Ruby", "explanation" => "Expert" }],
-      "skills_to_highlight" => [{ "skill" => "Leadership", "explanation" => "Team lead" }],
-      "skills_to_develop" => [{ "skill" => "Go", "explanation" => "Learn it" }]
+      "matching_skills" => [{ "skill" => "Ruby", "evidence" => "Expert" }],
+      "missing_skills" => [{ "skill" => "Go", "suggestion" => "Learn it" }]
     }
 
     result = @service.generate_cover_letter(

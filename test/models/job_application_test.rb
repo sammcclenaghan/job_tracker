@@ -155,15 +155,9 @@ class JobApplicationTest < ActiveSupport::TestCase
     assert_equal [], app.matching_skills
   end
 
-  test "skills_to_highlight returns array from skills_analysis" do
+  test "missing_skills returns array from skills_analysis" do
     app = job_applications(:interviewing_application)
-    assert_kind_of Array, app.skills_to_highlight
-    assert app.skills_to_highlight.any?
-  end
-
-  test "skills_to_develop returns array from skills_analysis" do
-    app = job_applications(:interviewing_application)
-    assert_kind_of Array, app.skills_to_develop
-    assert app.skills_to_develop.any?
+    assert_kind_of Array, app.missing_skills
+    assert app.missing_skills.any?
   end
 end

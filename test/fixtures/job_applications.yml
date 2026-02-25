@@ -26,7 +26,7 @@ interviewing_application:
   applied_at: <%= 5.days.ago %>
   job_description: Lead development projects
   skills: '["Python", "Django", "AWS"]'
-  skills_analysis: '{"matching_skills": [{"skill": "Python", "explanation": "5 years experience"}], "skills_to_highlight": [{"skill": "Leadership", "explanation": "Led team of 4"}], "skills_to_develop": [{"skill": "AWS", "explanation": "Consider certification"}]}'
+  skills_analysis: '{"matching_skills": [{"skill": "Python", "evidence": "5 years experience"}], "missing_skills": [{"skill": "AWS", "suggestion": "Consider certification"}]}'
 
 offer_application:
   company_name: DreamJob Co

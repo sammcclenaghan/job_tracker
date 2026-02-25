@@ -180,8 +180,7 @@ class JobApplicationsControllerTest < ActionDispatch::IntegrationTest
   test "generate_skills_analysis succeeds with resume" do
     analysis = {
       matching_skills: [],
-      skills_to_highlight: [],
-      skills_to_develop: []
+      missing_skills: []
     }.to_json
 
     stub_openrouter_success(analysis)

@@ -1,5 +1,5 @@
 class JobApplicationsController < ApplicationController
-  before_action :set_job_application, only: [:show, :edit, :update, :destroy, :update_status, :generate_cover_letter, :generate_skills_analysis]
+  before_action :set_job_application, only: [:show, :edit, :update, :destroy, :update_status, :generate_cover_letter, :generate_skills_analysis, :generate_resume_suggestions]
 
   def show
   end
@@ -48,6 +48,7 @@ class JobApplicationsController < ApplicationController
       job_url: result["job_url"]
     )
     if @job_application.save
+      GenerateSkillsAnalysisJob.perform_later(@job_application.id)
       redirect_to @job_application, notice: "Job application was successfully parsed and created!"
     else
       flash.now[:alert] = "Failed to save: #{@job_application.errors.full_messages.join(", ")}"
@@ -130,6 +131,30 @@ class JobApplicationsController < ApplicationController
     else
       @job_application.update(skills_analysis: result)
       redirect_to @job_application, notice: "Skills analysis generated!"
+    end
+  end
+
+  def generate_resume_suggestions
+    resume = Resume.first
+    if resume.nil? || resume.content.blank?
+      redirect_to @job_application, alert: "Please add your resume first."
+      return
+    end
+
+    service = LlmService.new
+    result = service.generate_resume_suggestions(
+      resume: resume.content,
+      job_title: @job_application.job_title,
+      job_description: @job_application.job_description,
+      required_skills: @job_application.skills_list
+    )
+
+    if result[:error] || result["error"]
+      error_msg = result[:error] || result["error"]
+      redirect_to @job_application, alert: error_msg
+    else
+      @job_application.update(resume_suggestions: result)
+      redirect_to @job_application, notice: "Resume suggestions generated!"
     end
   end
 

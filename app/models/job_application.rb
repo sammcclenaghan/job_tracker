@@ -52,14 +52,31 @@ class JobApplication < ApplicationRecord
     skills_analysis["matching_skills"] || []
   end
 
-  def skills_to_highlight
+  def missing_skills
     return [] unless has_skills_analysis?
-    skills_analysis["skills_to_highlight"] || []
+    skills_analysis["missing_skills"] || []
   end
 
-  def skills_to_develop
-    return [] unless has_skills_analysis?
-    skills_analysis["skills_to_develop"] || []
+  def skill_status(skill_name)
+    return nil unless has_skills_analysis?
+    downcased = skill_name.downcase
+    return :matching if matching_skills.any? { |s| s["skill"].downcase == downcased }
+    return :missing if missing_skills.any? { |s| s["skill"].downcase == downcased }
+    nil
+  end
+
+  def has_resume_suggestions?
+    resume_suggestions.is_a?(Hash) && resume_suggestions.any?
+  end
+
+  def suggested_rewrites
+    return [] unless has_resume_suggestions?
+    resume_suggestions["rewrites"] || []
+  end
+
+  def suggested_additions
+    return [] unless has_resume_suggestions?
+    resume_suggestions["additions"] || []
   end
   private
   def set_default_status

@@ -1,7 +1,7 @@
 class LlmService
   OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions".freeze
   PARSING_MODEL = "openai/gpt-oss-120b:free".freeze
-  WRITING_MODEL = "z-ai/glm-4.5-air:free".freeze
+  WRITING_MODEL = "meta-llama/llama-3.3-70b-instruct:free".freeze
 
   def initialize
     @api_key = Rails.application.credentials.openrouter.api_key
@@ -50,27 +50,20 @@ class LlmService
         {
           role: "system",
           content: <<~PROMPT
-            You are an expert career coach and resume analyst. Your job is to compare a candidate's resume against a job posting and provide a detailed skills gap analysis.
+            You are a skills matcher. Compare a candidate's resume against a job posting.
 
-            Analyze the resume against the job requirements and return a JSON object with these three categories:
+            Return a JSON object with exactly two arrays:
 
-            1. "matching_skills" - Array of objects for skills the candidate HAS that match job requirements
-               Each object: { "skill": "skill name", "explanation": "brief explanation of where this appears in their resume and how it matches" }
+            1. "matching_skills" - Skills the candidate HAS that the job requires
+               Each object: { "skill": "skill name", "evidence": "where this appears in their resume" }
 
-            2. "skills_to_highlight" - Array of objects for skills/experiences the candidate should EMPHASIZE in their application
-               Each object: { "skill": "skill/experience name", "explanation": "why this should be highlighted and how to position it" }
-               These should be strategic recommendations based on what the job posting emphasizes most.
-
-            3. "skills_to_develop" - Array of objects for skills the candidate may be MISSING or should address
-               Each object: { "skill": "skill name", "explanation": "why this matters for the role and suggestions for addressing it" }
-               Include suggestions like: transferable skills, quick learning opportunities, or how to acknowledge the gap positively.
+            2. "missing_skills" - Skills the job requires that the candidate LACKS
+               Each object: { "skill": "skill name", "suggestion": "how to address this gap" }
 
             Guidelines:
-            - Be specific and actionable in explanations
-            - Reference specific parts of the resume when possible
-            - For skills_to_highlight, focus on what would make the candidate stand out
-            - For skills_to_develop, be constructive - suggest how gaps could be addressed
-            - Limit each category to the most important 3-6 items
+            - Only include skills explicitly mentioned or clearly demonstrated in the resume
+            - For missing_skills, suggest transferable skills or quick ways to address the gap
+            - Limit each category to the most important 4-8 items
             - Return ONLY valid JSON, no markdown or extra text
           PROMPT
         },
@@ -107,14 +100,11 @@ class LlmService
         IMPORTANT - SKILLS ANALYSIS TO INCORPORATE:
         You have been provided with a skills analysis. Use this to write a more targeted cover letter:
 
-        SKILLS TO HIGHLIGHT (emphasize these prominently):
-        #{format_skills_for_prompt(skills_analysis["skills_to_highlight"])}
-
         MATCHING SKILLS (weave these naturally into your examples):
         #{format_skills_for_prompt(skills_analysis["matching_skills"])}
 
-        SKILLS GAPS TO ADDRESS (if relevant, acknowledge growth mindset or transferable skills):
-        #{format_skills_for_prompt(skills_analysis["skills_to_develop"])}
+        MISSING SKILLS (if relevant, acknowledge growth mindset or transferable skills):
+        #{format_skills_for_prompt(skills_analysis["missing_skills"])}
       SKILLS_GUIDANCE
     else
       ""
@@ -228,6 +218,58 @@ class LlmService
     { cover_letter: clean_text(response[:content]) }
   end
 
+  def generate_resume_suggestions(resume:, job_title:, job_description:, required_skills:)
+    response = chat(
+      messages: [
+        {
+          role: "system",
+          content: <<~PROMPT
+            You are an expert resume coach. Given a candidate's resume and a job posting, suggest specific improvements to tailor the resume for this role.
+
+            Return a JSON object with exactly two arrays:
+
+            1. "rewrites" - Existing resume bullet points that should be reworded to better match the job
+               Each object: { "original": "the existing bullet point from the resume", "suggested": "the improved version using job-relevant terminology and metrics", "reason": "one-line explanation of why this change helps" }
+
+            2. "additions" - New bullet points or skills to add to the resume
+               Each object: { "suggested": "the bullet point to add", "section": "which resume section it belongs in (e.g. Experience, Skills, Projects)", "reason": "why this addition matters for this role" }
+
+            Guidelines:
+            - For rewrites, quote the EXACT original text from the resume
+            - Use terminology from the job description in suggested rewrites
+            - Add specific metrics and numbers where possible
+            - Focus on the 3-5 most impactful rewrites, not every bullet
+            - For additions, only suggest things the candidate can truthfully claim based on their resume
+            - Limit additions to 2-4 items
+            - Return ONLY valid JSON, no markdown or extra text
+          PROMPT
+        },
+        {
+          role: "user",
+          content: <<~CONTENT
+            POSITION: #{job_title}
+
+            JOB DESCRIPTION:
+            #{job_description}
+
+            REQUIRED SKILLS:
+            #{required_skills.join(", ")}
+
+            CANDIDATE'S RESUME:
+            #{resume}
+          CONTENT
+        }
+      ],
+      temperature: 0.3
+    )
+
+    return response if response[:error]
+
+    JSON.parse(response[:content])
+  rescue JSON::ParserError => e
+    { error: "Failed to parse resume suggestions: #{e.message}" }
+  end
+
   private
 
   def format_skills_for_prompt(skills_array)
@@ -235,7 +277,8 @@ class LlmService
 
     skills_array.map do |item|
       if item.is_a?(Hash)
-        "- #{item['skill']}: #{item['explanation']}"
+        detail = item["evidence"] || item["suggestion"] || item["explanation"]
+        "- #{item['skill']}: #{detail}"
       else
         "- #{item}"
       end

@@ -6,6 +6,7 @@ Rails.application.routes.draw do
       post :parse
       post :generate_cover_letter
       post :generate_skills_analysis
+      post :generate_resume_suggestions
       patch :update_status
     end
     collection do
