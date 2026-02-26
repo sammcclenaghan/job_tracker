@@ -3,12 +3,23 @@ class LlmService
   PARSING_MODEL = "openai/gpt-oss-120b:free".freeze
   WRITING_MODEL = "meta-llama/llama-3.3-70b-instruct:free".freeze
 
+  PROVIDERS = %w[openrouter ollama].freeze
+  FEATURES = %w[parsing skills_analysis cover_letter resume_suggestions].freeze
+  DEFAULT_OLLAMA_URL = "http://localhost:11434".freeze
+
   def initialize
     @api_key = Rails.application.credentials.openrouter.api_key
+    @ollama_base_url = Setting.get("ollama_base_url").presence || DEFAULT_OLLAMA_URL
+    @ollama_model = Setting.get("ollama_model").presence || "glm4"
+  end
+
+  def self.provider_for(feature)
+    Setting.get("provider_#{feature}") || "openrouter"
   end
 
   def parse_job_posting(raw_content)
     response = chat(
+      feature: :parsing,
       messages: [
         {
           role: "system",
@@ -46,6 +57,7 @@ class LlmService
 
   def generate_skills_analysis(resume:, job_title:, job_description:, required_skills:)
     response = chat(
+      feature: :skills_analysis,
       messages: [
         {
           role: "system",
@@ -111,6 +123,7 @@ class LlmService
     end
 
     response = chat(
+      feature: :cover_letter,
       model: WRITING_MODEL,
       messages: [
         {
@@ -220,6 +233,7 @@ class LlmService
 
   def generate_resume_suggestions(resume:, job_title:, job_description:, required_skills:)
     response = chat(
+      feature: :resume_suggestions,
       messages: [
         {
           role: "system",
@@ -300,7 +314,15 @@ class LlmService
       .strip
   end
 
-  def chat(messages:, model: PARSING_MODEL, temperature: 0.7)
+  def chat(feature:, messages:, model: PARSING_MODEL, temperature: 0.7)
+    if self.class.provider_for(feature) == "ollama"
+      chat_ollama(messages: messages, temperature: temperature)
+    else
+      chat_openrouter(messages: messages, model: model, temperature: temperature)
+    end
+  end
+
+  def chat_openrouter(messages:, model:, temperature:)
     conn = Faraday.new(url: OPENROUTER_URL) do |f|
       f.request :json
       f.response :json
@@ -329,6 +351,41 @@ class LlmService
     end
   rescue Faraday::Error => e
     { error: "API request failed: #{e.message}" }
+  rescue StandardError => e
+    { error: "Unexpected error: #{e.message}" }
+  end
+
+  def chat_ollama(messages:, temperature:)
+    url = "#{@ollama_base_url}/v1/chat/completions"
+    conn = Faraday.new(url: url) do |f|
+      f.request :json
+      f.response :json
+      f.adapter Faraday.default_adapter
+      f.options.open_timeout = 30
+      f.options.timeout = 300
+    end
+
+    response = conn.post do |req|
+      req.headers["Content-Type"] = "application/json"
+      req.body = {
+        model: @ollama_model,
+        messages: messages,
+        temperature: temperature
+      }.to_json
+    end
+
+    if response.success?
+      body = response.body
+      content = body.dig("choices", 0, "message", "content")
+      { content: content }
+    else
+      error_message = response.body.dig("error", "message") || "Ollama request failed with status #{response.status}"
+      { error: error_message }
+    end
+  rescue Faraday::ConnectionFailed
+    { error: "Cannot connect to Ollama at #{@ollama_base_url}. Is Ollama running?" }
+  rescue Faraday::Error => e
+    { error: "Ollama request failed: #{e.message}" }
   rescue StandardError => e
     { error: "Unexpected error: #{e.message}" }
   end

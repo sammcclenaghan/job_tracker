@@ -105,7 +105,7 @@ class JobApplicationsController < ApplicationController
     if result[:error]
       redirect_to @job_application, alert: result[:error]
     else
-      @job_application.update(cover_letter: result[:cover_letter])
+      @job_application.update(cover_letter: result[:cover_letter], provider_error: nil)
       redirect_to @job_application, notice: "Cover letter generated!"
     end
   end
@@ -129,7 +129,7 @@ class JobApplicationsController < ApplicationController
       error_msg = result[:error] || result["error"]
       redirect_to @job_application, alert: error_msg
     else
-      @job_application.update(skills_analysis: result)
+      @job_application.update(skills_analysis: result, provider_error: nil)
       redirect_to @job_application, notice: "Skills analysis generated!"
     end
   end
@@ -153,7 +153,7 @@ class JobApplicationsController < ApplicationController
       error_msg = result[:error] || result["error"]
       redirect_to @job_application, alert: error_msg
     else
-      @job_application.update(resume_suggestions: result)
+      @job_application.update(resume_suggestions: result, provider_error: nil)
       redirect_to @job_application, notice: "Resume suggestions generated!"
     end
   end

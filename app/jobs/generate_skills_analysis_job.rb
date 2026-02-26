@@ -15,8 +15,12 @@ class GenerateSkillsAnalysisJob < ApplicationJob
       required_skills: job_application.skills_list
     )
 
-    return if result[:error] || result["error"]
+    if result[:error] || result["error"]
+      error_msg = result[:error] || result["error"]
+      job_application.update(provider_error: error_msg)
+      return
+    end
 
-    job_application.update(skills_analysis: result)
+    job_application.update(skills_analysis: result, provider_error: nil)
   end
 end

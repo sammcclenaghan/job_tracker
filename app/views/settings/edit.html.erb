@@ -1,0 +1,57 @@
+<div class="max-w-2xl mx-auto">
+  <h1 class="text-2xl font-bold text-white mb-8">Settings</h1>
+
+  <%= form_with url: settings_path, method: :patch, data: { controller: "settings-form" } do |f| %>
+    <div class="bg-gray-900 border border-gray-800 rounded-lg p-6 mb-6">
+      <h2 class="text-lg font-semibold text-white mb-1">LLM Provider per Feature</h2>
+      <p class="text-xs text-gray-500 mb-5">Choose which provider to use for each AI feature.</p>
+
+      <div class="space-y-4">
+        <% feature_labels = { "parsing" => "Job Parsing", "skills_analysis" => "Skills Analysis", "cover_letter" => "Cover Letter", "resume_suggestions" => "Resume Suggestions" } %>
+        <% @feature_providers.each do |feature, provider| %>
+          <div class="flex items-center justify-between">
+            <label class="text-sm text-gray-300"><%= feature_labels[feature] %></label>
+            <select name="providers[<%= feature %>]"
+              data-action="change->settings-form#toggle"
+              class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-200 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+              <% LlmService::PROVIDERS.each do |p| %>
+                <option value="<%= p %>" <%= "selected" if provider == p %>><%= p.capitalize %></option>
+              <% end %>
+            </select>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <div class="bg-gray-900 border border-gray-800 rounded-lg p-6 mb-6 <%= 'hidden' unless @feature_providers.values.include?('ollama') %>"
+      data-settings-form-target="ollamaSettings">
+      <h2 class="text-lg font-semibold text-white mb-4">Ollama Configuration</h2>
+
+      <div class="space-y-4">
+        <div>
+          <label for="ollama_base_url" class="block text-sm font-medium text-gray-300 mb-1">Base URL</label>
+          <input type="text" name="ollama_base_url" id="ollama_base_url"
+            value="<%= @ollama_base_url %>"
+            placeholder="http://localhost:11434"
+            class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+          <p class="text-xs text-gray-500 mt-1">The URL where Ollama is running (default: http://localhost:11434)</p>
+        </div>
+
+        <div>
+          <label for="ollama_model" class="block text-sm font-medium text-gray-300 mb-1">Model</label>
+          <input type="text" name="ollama_model" id="ollama_model"
+            value="<%= @ollama_model %>"
+            placeholder="glm4"
+            class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+          <p class="text-xs text-gray-500 mt-1">The model name to use (e.g. glm4, llama3, mistral). Must be pulled in Ollama first.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex justify-end">
+      <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-6 py-2 rounded-lg transition-colors">
+        Save Settings
+      </button>
+    </div>
+  <% end %>
+</div>

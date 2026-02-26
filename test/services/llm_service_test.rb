@@ -188,4 +188,53 @@ class LlmServiceTest < ActiveSupport::TestCase
     assert result[:error]
     assert_includes result[:error], "Unexpected error"
   end
+
+  # Ollama provider tests
+  test "uses ollama provider when configured" do
+    response_json = { company_name: "Ollama Corp", job_title: "Dev" }.to_json
+    stub_ollama_success(response_json)
+
+    service = LlmService.new
+    result = service.parse_job_posting("Some job posting text")
+
+    assert_equal "Ollama Corp", result["company_name"]
+  end
+
+  test "ollama returns error on API failure" do
+    stub_ollama_error(message: "Model not found", status: 404)
+
+    service = LlmService.new
+    result = service.parse_job_posting("Some text")
+
+    assert result[:error]
+    assert_includes result[:error], "Model not found"
+  end
+
+  test "ollama returns friendly error when connection refused" do
+    set_all_providers("ollama")
+    Setting.set("ollama_base_url", "http://localhost:11434")
+    Setting.set("ollama_model", "glm4")
+    stub_request(:post, "http://localhost:11434/v1/chat/completions")
+      .to_raise(Faraday::ConnectionFailed.new("Connection refused"))
+
+    service = LlmService.new
+    result = service.parse_job_posting("Some text")
+
+    assert result[:error]
+    assert_includes result[:error], "Cannot connect to Ollama"
+  end
+
+  test "ollama generates cover letter" do
+    stub_ollama_success("Dear Hiring Manager, I am applying...")
+
+    service = LlmService.new
+    result = service.generate_cover_letter(
+      resume: "My resume",
+      job_title: "Developer",
+      company_name: "Tech Corp",
+      job_description: "Build software"
+    )
+
+    assert result[:cover_letter]
+  end
 end

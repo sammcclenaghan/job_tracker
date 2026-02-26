@@ -16,6 +16,7 @@ Rails.application.routes.draw do
   end
 
   resource :resume, only: [ :show, :edit, :update ]
+  resource :settings, only: [ :edit, :update ]
 
   get "up" => "rails/health#show", as: :rails_health_check
 end
