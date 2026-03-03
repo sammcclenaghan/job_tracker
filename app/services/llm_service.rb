@@ -50,7 +50,7 @@ class LlmService
 
     return response if response[:error]
 
-    JSON.parse(response[:content])
+    JSON.parse(strip_markdown_fences(response[:content]))
   rescue JSON::ParserError => e
     { error: "Failed to parse response: #{e.message}" }
   end
@@ -100,7 +100,7 @@ class LlmService
 
     return response if response[:error]
 
-    JSON.parse(response[:content])
+    JSON.parse(strip_markdown_fences(response[:content]))
   rescue JSON::ParserError => e
     { error: "Failed to parse skills analysis: #{e.message}" }
   end
@@ -279,7 +279,7 @@ class LlmService
 
     return response if response[:error]
 
-    JSON.parse(response[:content])
+    JSON.parse(strip_markdown_fences(response[:content]))
   rescue JSON::ParserError => e
     { error: "Failed to parse resume suggestions: #{e.message}" }
   end
@@ -297,6 +297,12 @@ class LlmService
         "- #{item}"
       end
     end.join("\n")
+  end
+
+  def strip_markdown_fences(text)
+    return text if text.nil?
+
+    text.sub(/\A\s*```\w*\n?/, "").sub(/\n?```\s*\z/, "").strip
   end
 
   def clean_text(text)
