@@ -1,0 +1,23 @@
+leanpub_entry:
+  entry_type: experience
+  title: Full Stack Developer Intern
+  organization: Leanpub
+  location: Victoria, BC
+  date_range: May 2025 - Dec 2025
+  technologies: Ruby on Rails, Redis, GraphQL, AWS S3
+  tags: backend, testing, api, infrastructure
+  details: |
+    Built and maintained test coverage with RSpec and FactoryBot.
+    Reworked Dropbox + S3 sync and publishing flows.
+    Added Redis-backed background job progress tracking.
+
+job_tracker_project:
+  entry_type: project
+  title: Job Application Tracker
+  organization: Personal
+  date_range: Jan 2026 - Present
+  technologies: Ruby on Rails, Hotwire, Tailwind CSS, SQLite
+  tags: fullstack, ai, side-project
+  details: |
+    Built a Rails app to track job applications with AI-powered insights.
+    Integrated LLM APIs for cover letter generation and resume coaching.

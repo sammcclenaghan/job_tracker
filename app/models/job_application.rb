@@ -1,6 +1,11 @@
 class JobApplication < ApplicationRecord
-  STATUSES=%w[saved applied interviewing offer rejected withdrawn].freeze
-  WORK_ARRANGEMENTS=%w[remote hybrid onsite].freeze
+  STATUSES = %w[saved applied interviewing offer rejected withdrawn].freeze
+  WORK_ARRANGEMENTS = %w[remote hybrid onsite].freeze
+  INSIGHTS_STATUSES = %w[pending processing complete].freeze
+
+  AUTO_INSIGHT_FIELDS = %w[
+    match_score project_recommendations experience_tailoring
+  ].freeze
 
   validates :company_name, presence: true
   validates :job_title, presence: true
@@ -39,6 +44,7 @@ class JobApplication < ApplicationRecord
     }
     colors[status] || "bg-gray-100 text-gray-700"
   end
+
   def skills_list
     skills.is_a?(Array) ? skills : []
   end
@@ -66,19 +72,87 @@ class JobApplication < ApplicationRecord
   end
 
   def has_resume_suggestions?
-    resume_suggestions.is_a?(Hash) && resume_suggestions.any?
+    false
   end
 
   def suggested_rewrites
-    return [] unless has_resume_suggestions?
-    resume_suggestions["rewrites"] || []
+    []
   end
 
   def suggested_additions
-    return [] unless has_resume_suggestions?
-    resume_suggestions["additions"] || []
+    []
   end
+
+  def has_project_recommendations?
+    project_recommendations.is_a?(Hash) && project_recommendations.any?
+  end
+
+  def highlighted_projects
+    return [] unless has_project_recommendations?
+    project_recommendations["highlight"] || []
+  end
+
+  def deprioritized_projects
+    return [] unless has_project_recommendations?
+    project_recommendations["deprioritize"] || []
+  end
+
+  def missing_projects
+    return [] unless has_project_recommendations?
+    project_recommendations["missing"] || []
+  end
+
+  def has_experience_tailoring?
+    experience_tailoring.is_a?(Hash) && experience_tailoring.any?
+  end
+
+  def tailored_jobs
+    return [] unless has_experience_tailoring?
+    experience_tailoring["jobs"] || []
+  end
+
+  def insights_processing?
+    return false unless insights_status == "processing"
+    progress = insights_progress
+    progress[:completed] < progress[:total]
+  end
+
+  def insights_complete?
+    return true if insights_status == "complete"
+    progress = insights_progress
+    progress[:completed] >= progress[:total]
+  end
+
+  def check_insights_complete!
+    return unless insights_status == "processing"
+
+    all_done = AUTO_INSIGHT_FIELDS.all? { |field| send(field).present? }
+
+    update(insights_status: "complete") if all_done
+  end
+
+  def clear_provider_errors!
+    update(provider_error: nil)
+  end
+
+  def record_provider_error!(feature:, message:)
+    feature_name = feature.to_s.humanize
+    formatted = "[#{feature_name}] #{message}"
+
+    with_lock do
+      lines = provider_error.to_s.lines.map(&:strip).reject(&:blank?)
+      lines << formatted
+      update(provider_error: lines.uniq.join("\n"))
+    end
+  end
+
+  def insights_progress
+    completed = AUTO_INSIGHT_FIELDS.count { |f| send(f).present? }
+    { completed: completed, total: AUTO_INSIGHT_FIELDS.size }
+  end
+
   private
+
   def set_default_status
     self.status ||= "saved"
   end

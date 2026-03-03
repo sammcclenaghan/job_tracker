@@ -113,8 +113,8 @@ class JobApplicationTest < ActiveSupport::TestCase
 
   # Skills methods
   test "skills_list returns array when skills is array" do
-    app = JobApplication.new(skills: ["Ruby", "Rails"])
-    assert_equal ["Ruby", "Rails"], app.skills_list
+    app = JobApplication.new(skills: [ "Ruby", "Rails" ])
+    assert_equal [ "Ruby", "Rails" ], app.skills_list
   end
 
   test "skills_list returns empty array when skills is nil" do
@@ -159,5 +159,48 @@ class JobApplicationTest < ActiveSupport::TestCase
     app = job_applications(:interviewing_application)
     assert_kind_of Array, app.missing_skills
     assert app.missing_skills.any?
+  end
+
+  test "record_provider_error! appends feature-scoped errors" do
+    app = job_applications(:saved_application)
+    app.update!(provider_error: nil)
+
+    app.record_provider_error!(feature: :match_score, message: "Rate limit exceeded")
+    app.record_provider_error!(feature: :cover_letter, message: "Model not found")
+
+    assert_includes app.reload.provider_error, "[Match score] Rate limit exceeded"
+    assert_includes app.provider_error, "[Cover letter] Model not found"
+  end
+
+  test "record_provider_error! de-duplicates repeated errors" do
+    app = job_applications(:saved_application)
+    app.update!(provider_error: nil)
+
+    app.record_provider_error!(feature: :match_score, message: "Service unavailable")
+    app.record_provider_error!(feature: :match_score, message: "Service unavailable")
+
+    assert_equal 1, app.reload.provider_error.lines.count { |line| line.include?("Service unavailable") }
+  end
+
+  test "clear_provider_errors! removes existing provider errors" do
+    app = job_applications(:saved_application)
+    app.update!(provider_error: "existing error")
+
+    app.clear_provider_errors!
+
+    assert_nil app.reload.provider_error
+  end
+
+  test "insights_processing? is false when auto insights are all complete" do
+    app = job_applications(:saved_application)
+    app.update!(
+      insights_status: "processing",
+      match_score: 72,
+      project_recommendations: { "highlight" => [] },
+      experience_tailoring: { "jobs" => [] }
+    )
+
+    assert_not app.insights_processing?
+    assert app.insights_complete?
   end
 end

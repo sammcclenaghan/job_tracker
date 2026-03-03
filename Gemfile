@@ -33,11 +33,14 @@ gem "bootsnap", require: false
 # Add HTTP asset caching/compression and X-Sendfile acceleration to Puma [https://github.com/basecamp/thruster/]
 gem "thruster", require: false
 
+# Solid Queue for background job processing [https://github.com/rails/solid_queue]
+gem "solid_queue"
+
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
 gem "image_processing", "~> 1.2"
 
-# HTTP client for OpenRouter API
-gem "faraday"
+# RubyLLM for AI providers
+gem "ruby_llm"
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem

@@ -1,20 +1,14 @@
 class ResumesController < ApplicationController
   def show
-    @resume = Resume.current
+    @entries = ExperienceEntry.recent
   end
+
   def edit
-    @resume = Resume.current
+    @entries = ExperienceEntry.recent
+    @experience_entry = ExperienceEntry.new
   end
+
   def update
-    @resume = Resume.current
-    if @resume.update(resume_params)
-      redirect_to resume_path, notice: "Resume updated successfully."
-    else
-      render :edit, status: :unprocessable_entity
-    end
-  end
-  private
-  def resume_params
-    params.require(:resume).permit(:content)
+    redirect_to edit_resume_path, alert: "Use the experience log form to add or edit entries."
   end
 end

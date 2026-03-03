@@ -5,6 +5,91 @@ class LlmServiceTest < ActiveSupport::TestCase
     @service = LlmService.new
   end
 
+  test "FEATURES includes all insight feature keys" do
+    expected = %w[
+      parsing
+      skills_analysis
+      match_score
+      cover_letter
+      project_recommendations
+      experience_tailoring
+    ]
+
+    assert_equal expected.sort, LlmService::FEATURES.sort
+  end
+
+  test "model_for returns feature-specific model override when configured" do
+    Setting.set("provider_skills_analysis", "openrouter")
+    Setting.set("model_skills_analysis", "anthropic/claude-3.5-sonnet")
+
+    assert_equal "anthropic/claude-3.5-sonnet", LlmService.model_for("skills_analysis")
+  end
+
+  test "model_for falls back to provider defaults" do
+    Setting.set("model_parsing", nil)
+    Setting.set("ollama_model", nil)
+    Setting.set("provider_parsing", "openrouter")
+    Setting.set("provider_cover_letter", "openrouter")
+    Setting.set("provider_experience_tailoring", "ollama")
+
+    assert_equal LlmService::PARSING_MODEL, LlmService.model_for("parsing")
+    assert_equal LlmService::WRITING_MODEL, LlmService.model_for("cover_letter")
+    assert_equal LlmService::DEFAULT_OLLAMA_MODEL, LlmService.model_for("experience_tailoring")
+  end
+
+  test "model_for uses global ollama_model when ollama feature model is unset" do
+    Setting.set("provider_experience_tailoring", "ollama")
+    Setting.set("model_experience_tailoring", nil)
+    Setting.set("ollama_model", "glm-5")
+
+    assert_equal "glm-5", LlmService.model_for("experience_tailoring")
+  end
+
+  test "chat_json uses configured per-feature model for openrouter" do
+    Setting.set("provider_skills_analysis", "openrouter")
+    Setting.set("model_skills_analysis", "openai/gpt-4o-mini")
+    stub_request(:post, "https://openrouter.ai/api/v1/chat/completions")
+      .with { |req| JSON.parse(req.body)["model"] == "openai/gpt-4o-mini" }
+      .to_return(
+        status: 200,
+        body: { choices: [ { message: { content: { ok: true }.to_json } } ] }.to_json,
+        headers: { "Content-Type" => "application/json" }
+      )
+
+    result = @service.chat_json(
+      feature: :skills_analysis,
+      messages: [
+        { role: "system", content: "System prompt" },
+        { role: "user", content: "User prompt" }
+      ]
+    )
+
+    assert_equal true, result["ok"]
+  end
+
+  test "chat_json uses configured per-feature model for ollama" do
+    Setting.set("provider_parsing", "ollama")
+    Setting.set("model_parsing", "llama3.2")
+    Setting.set("ollama_base_url", "http://localhost:11434")
+    stub_request(:post, "http://localhost:11434/v1/chat/completions")
+      .with { |req| JSON.parse(req.body)["model"] == "llama3.2" }
+      .to_return(
+        status: 200,
+        body: { choices: [ { message: { content: { ok: true }.to_json } } ] }.to_json,
+        headers: { "Content-Type" => "application/json" }
+      )
+
+    result = @service.chat_json(
+      feature: :parsing,
+      messages: [
+        { role: "system", content: "System prompt" },
+        { role: "user", content: "User prompt" }
+      ]
+    )
+
+    assert_equal true, result["ok"]
+  end
+
   # parse_job_posting tests
   test "parse_job_posting returns parsed data on success" do
     response_json = {
@@ -14,7 +99,7 @@ class LlmServiceTest < ActiveSupport::TestCase
       work_arrangement: "remote",
       salary_range: "$100k-$150k",
       job_description: "Build great software",
-      skills: ["Ruby", "Rails", "PostgreSQL"],
+      skills: [ "Ruby", "Rails", "PostgreSQL" ],
       contact_email: "jobs@test.com",
       application_instructions: "Apply online",
       job_url: "https://test.com/jobs/1"
@@ -26,7 +111,7 @@ class LlmServiceTest < ActiveSupport::TestCase
 
     assert_equal "Test Corp", result["company_name"]
     assert_equal "Ruby Developer", result["job_title"]
-    assert_equal ["Ruby", "Rails", "PostgreSQL"], result["skills"]
+    assert_equal [ "Ruby", "Rails", "PostgreSQL" ], result["skills"]
   end
 
   test "parse_job_posting returns error on API failure" do
@@ -47,8 +132,8 @@ class LlmServiceTest < ActiveSupport::TestCase
     assert_includes result[:error], "Failed to parse response"
   end
 
-  # generate_skills_analysis tests
-  test "generate_skills_analysis returns parsed analysis" do
+  # chat_json tests
+  test "chat_json returns parsed JSON" do
     response_json = {
       matching_skills: [
         { skill: "Ruby", evidence: "5 years experience" }
@@ -60,117 +145,101 @@ class LlmServiceTest < ActiveSupport::TestCase
 
     stub_openrouter_success(response_json)
 
-    result = @service.generate_skills_analysis(
-      resume: "My resume content",
-      job_title: "Senior Developer",
-      job_description: "Lead development projects",
-      required_skills: ["Ruby", "Kubernetes"]
+    result = @service.chat_json(
+      feature: :skills_analysis,
+      messages: [
+        { role: "system", content: "You are a skills matcher." },
+        { role: "user", content: "Analyze this resume." }
+      ]
     )
 
     assert_kind_of Array, result["matching_skills"]
     assert_kind_of Array, result["missing_skills"]
   end
 
-  test "generate_skills_analysis returns error on API failure" do
+  test "chat_json returns error on API failure" do
     stub_openrouter_error(message: "Service unavailable", status: 503)
 
-    result = @service.generate_skills_analysis(
-      resume: "Resume",
-      job_title: "Dev",
-      job_description: "Description",
-      required_skills: []
+    result = @service.chat_json(
+      feature: :skills_analysis,
+      messages: [
+        { role: "system", content: "System prompt" },
+        { role: "user", content: "User prompt" }
+      ]
     )
 
     assert result[:error]
   end
 
-  test "generate_skills_analysis returns error on invalid JSON" do
+  test "chat_json returns error on invalid JSON" do
     stub_openrouter_success("not json")
 
-    result = @service.generate_skills_analysis(
-      resume: "Resume",
-      job_title: "Dev",
-      job_description: "Description",
-      required_skills: []
+    result = @service.chat_json(
+      feature: :skills_analysis,
+      messages: [
+        { role: "system", content: "System prompt" },
+        { role: "user", content: "User prompt" }
+      ]
     )
 
     assert result[:error]
-    assert_includes result[:error], "Failed to parse skills analysis"
+    assert_includes result[:error], "Failed to parse response"
   end
 
-  # generate_cover_letter tests
-  test "generate_cover_letter returns cleaned cover letter" do
-    cover_letter_text = "Dear Hiring Manager,\n\nI am **excited** to apply..."
+  # chat_text tests
+  test "chat_text returns cleaned text" do
+    text = "Dear Hiring Manager,\n\nI am **excited** to apply..."
 
-    stub_openrouter_success(cover_letter_text)
+    stub_openrouter_success(text)
 
-    result = @service.generate_cover_letter(
-      resume: "My resume",
-      job_title: "Developer",
-      company_name: "Tech Corp",
-      job_description: "Build software"
+    result = @service.chat_text(
+      feature: :cover_letter,
+      messages: [
+        { role: "system", content: "Write a cover letter." },
+        { role: "user", content: "Write one for this job." }
+      ]
     )
 
-    assert result[:cover_letter]
-    # Bold markdown should be removed
-    assert_not_includes result[:cover_letter], "**"
+    assert result[:content]
+    assert_not_includes result[:content], "**"
   end
 
-  test "generate_cover_letter includes skills analysis in prompt when provided" do
-    stub_openrouter_success("Cover letter content")
-
-    skills_analysis = {
-      "matching_skills" => [{ "skill" => "Ruby", "evidence" => "Expert" }],
-      "missing_skills" => [{ "skill" => "Go", "suggestion" => "Learn it" }]
-    }
-
-    result = @service.generate_cover_letter(
-      resume: "My resume",
-      job_title: "Developer",
-      company_name: "Tech Corp",
-      job_description: "Build software",
-      skills_analysis: skills_analysis
-    )
-
-    assert result[:cover_letter]
-  end
-
-  test "generate_cover_letter returns error on API failure" do
-    stub_openrouter_error(message: "Timeout", status: 504)
-
-    result = @service.generate_cover_letter(
-      resume: "Resume",
-      job_title: "Dev",
-      company_name: "Corp",
-      job_description: "Desc"
-    )
-
-    assert result[:error]
-  end
-
-  # clean_text tests (via generate_cover_letter)
-  test "clean_text handles special characters" do
-    # Text with various special characters that should be cleaned
+  test "chat_text handles special characters" do
     text_with_specials = "Use em\u2014dash and en\u2013dash and 50 % and ** bold **"
 
     stub_openrouter_success(text_with_specials)
 
-    result = @service.generate_cover_letter(
-      resume: "Resume",
-      job_title: "Dev",
-      company_name: "Corp",
-      job_description: "Desc"
+    result = @service.chat_text(
+      feature: :cover_letter,
+      messages: [
+        { role: "system", content: "Write." },
+        { role: "user", content: "Write something." }
+      ]
     )
 
-    letter = result[:cover_letter]
-    assert_not_includes letter, "\u2014"  # em-dash should be converted
-    assert_not_includes letter, "\u2013"  # en-dash should be converted
-    assert_not_includes letter, " %"      # space before % should be removed
+    content = result[:content]
+    assert_not_includes content, "\u2014"
+    assert_not_includes content, "\u2013"
+    assert_not_includes content, " %"
+  end
+
+  test "chat_text returns error on API failure" do
+    stub_openrouter_error(message: "Timeout", status: 504)
+
+    result = @service.chat_text(
+      feature: :cover_letter,
+      messages: [
+        { role: "system", content: "Write." },
+        { role: "user", content: "Write something." }
+      ]
+    )
+
+    assert result[:error]
   end
 
   # Network error handling
-  test "handles Faraday connection errors" do
-    stub_request(:post, LlmService::OPENROUTER_URL)
+  test "handles connection errors" do
+    stub_request(:post, "https://openrouter.ai/api/v1/chat/completions")
       .to_raise(Faraday::ConnectionFailed.new("Connection refused"))
 
     result = @service.parse_job_posting("Some text")
@@ -180,7 +249,7 @@ class LlmServiceTest < ActiveSupport::TestCase
   end
 
   test "handles unexpected errors" do
-    stub_request(:post, LlmService::OPENROUTER_URL)
+    stub_request(:post, "https://openrouter.ai/api/v1/chat/completions")
       .to_raise(StandardError.new("Something unexpected"))
 
     result = @service.parse_job_posting("Some text")
@@ -224,17 +293,18 @@ class LlmServiceTest < ActiveSupport::TestCase
     assert_includes result[:error], "Cannot connect to Ollama"
   end
 
-  test "ollama generates cover letter" do
+  test "ollama chat_text works" do
     stub_ollama_success("Dear Hiring Manager, I am applying...")
 
     service = LlmService.new
-    result = service.generate_cover_letter(
-      resume: "My resume",
-      job_title: "Developer",
-      company_name: "Tech Corp",
-      job_description: "Build software"
+    result = service.chat_text(
+      feature: :cover_letter,
+      messages: [
+        { role: "system", content: "Write a cover letter." },
+        { role: "user", content: "Write one." }
+      ]
     )
 
-    assert result[:cover_letter]
+    assert result[:content]
   end
 end

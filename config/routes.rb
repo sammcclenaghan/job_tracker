@@ -3,10 +3,8 @@ Rails.application.routes.draw do
 
   resources :job_applications, except: [:index] do
     member do
-      post :parse
-      post :generate_cover_letter
-      post :generate_skills_analysis
-      post :generate_resume_suggestions
+      post :regenerate_cover_letter
+      post :regenerate_insights
       patch :update_status
     end
     collection do
@@ -16,6 +14,7 @@ Rails.application.routes.draw do
   end
 
   resource :resume, only: [ :show, :edit, :update ]
+  resources :experience_entries, only: [ :create, :update, :destroy ]
   resource :settings, only: [ :edit, :update ]
 
   get "up" => "rails/health#show", as: :rails_health_check

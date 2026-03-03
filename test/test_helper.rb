@@ -2,6 +2,7 @@ ENV["RAILS_ENV"] ||= "test"
 require_relative "../config/environment"
 require "rails/test_help"
 require "webmock/minitest"
+require "faraday"
 
 # Disable external HTTP connections (tests should mock all API calls)
 WebMock.disable_net_connect!(allow_localhost: true)
@@ -21,11 +22,11 @@ module ActiveSupport
     # Helper to stub OpenRouter API responses
     def stub_openrouter_success(response_content)
       set_all_providers("openrouter")
-      stub_request(:post, LlmService::OPENROUTER_URL)
+      stub_request(:post, "https://openrouter.ai/api/v1/chat/completions")
         .to_return(
           status: 200,
           body: {
-            choices: [{ message: { content: response_content } }]
+            choices: [ { message: { content: response_content } } ]
           }.to_json,
           headers: { "Content-Type" => "application/json" }
         )
@@ -33,7 +34,7 @@ module ActiveSupport
 
     def stub_openrouter_error(message: "API Error", status: 500)
       set_all_providers("openrouter")
-      stub_request(:post, LlmService::OPENROUTER_URL)
+      stub_request(:post, "https://openrouter.ai/api/v1/chat/completions")
         .to_return(
           status: status,
           body: { error: { message: message } }.to_json,
@@ -49,7 +50,7 @@ module ActiveSupport
         .to_return(
           status: 200,
           body: {
-            choices: [{ message: { content: response_content } }]
+            choices: [ { message: { content: response_content } } ]
           }.to_json,
           headers: { "Content-Type" => "application/json" }
         )

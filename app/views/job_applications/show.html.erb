@@ -1,316 +1,464 @@
-<div class="max-w-4xl mx-auto">
-  <%# Header with actions %>
-  <div class="flex items-start justify-between gap-4 mb-8">
-    <div class="flex-1 min-w-0">
-      <div class="flex items-start gap-3 mb-2">
-        <h1 class="text-2xl font-bold text-white"><%= @job_application.job_title %></h1>
-      </div>
-      <div class="flex items-center gap-3">
-        <p class="text-gray-400 text-lg"><%= @job_application.company_name %></p>
-        <span class="<%= @job_application.status_badge_classes %> text-xs font-medium px-2.5 py-0.5 rounded-full shrink-0">
-          <%= @job_application.status.capitalize %>
-        </span>
-      </div>
-    </div>
-
-    <div class="flex items-center gap-3 shrink-0">
-      <%= link_to "Edit", edit_job_application_path(@job_application), class: "bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors" %>
-      <%= button_to "Delete", job_application_path(@job_application), method: :delete, data: { turbo_confirm: "Are you sure you want to delete this application?" }, class: "bg-red-600 hover:bg-red-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors" %>
-    </div>
-  </div>
-
-  <%# Status quick actions %>
-  <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 mb-6" data-controller="status">
-    <p class="text-sm text-gray-400 mb-3">Status:</p>
-    <div class="flex flex-wrap gap-2">
-      <% JobApplication::STATUSES.each do |status| %>
-        <% is_current = status == @job_application.status %>
-        <button
-          type="button"
-          data-status-target="button"
-          data-status="<%= status %>"
-          data-url="<%= update_status_job_application_path(@job_application, status: status) %>"
-          data-action="click->status#select"
-          class="text-xs font-medium px-3 py-1.5 rounded-full border transition-colors <%= is_current ? 'bg-blue-600 border-blue-600 text-white' : 'border-gray-700 text-gray-300 hover:bg-gray-800' %>"
-        >
-          <%= status.capitalize %>
+<div class="max-w-7xl mx-auto">
+  <%# Back link + actions bar %>
+  <div class="flex items-center justify-between mb-6">
+    <%= link_to "← Applications", root_path, class: "text-gray-500 hover:text-gray-300 text-sm transition-colors" %>
+    <div class="flex items-center gap-2">
+      <%= form_with url: regenerate_insights_job_application_path(@job_application), method: :post, class: "inline" do %>
+        <button type="submit" class="text-xs font-medium px-3 py-1.5 rounded-lg bg-gray-800 border border-gray-700 hover:bg-gray-700 text-gray-300 transition-colors inline-flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+          Regenerate
         </button>
       <% end %>
+      <%= link_to "Edit", edit_job_application_path(@job_application), class: "text-xs font-medium px-3 py-1.5 rounded-lg bg-gray-800 border border-gray-700 hover:bg-gray-700 text-gray-300 transition-colors" %>
+      <%= button_to "Delete", job_application_path(@job_application), method: :delete, data: { turbo_confirm: "Are you sure?" }, class: "text-xs font-medium px-3 py-1.5 rounded-lg bg-gray-800 border border-red-900 hover:bg-red-900/50 text-red-400 transition-colors" %>
     </div>
   </div>
+
+  <%# Insights progress banner %>
+  <% if @job_application.insights_processing? %>
+    <% progress = @job_application.insights_progress %>
+    <div class="mb-6 px-4 py-3 rounded-lg bg-indigo-950/50 border border-indigo-800/50 flex items-center gap-3">
+      <svg class="animate-spin h-4 w-4 text-indigo-400 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+      <p class="text-sm text-indigo-300">Generating insights... <span class="text-indigo-400 font-medium"><%= progress[:completed] %>/<%= progress[:total] %></span> complete. Refresh to see updates.</p>
+    </div>
+  <% end %>
 
   <%# Provider error %>
   <% if @job_application.provider_error.present? %>
-    <div class="mb-6 px-4 py-3 rounded-lg bg-red-900/50 border border-red-700 flex items-start gap-3">
-      <svg class="w-5 h-5 text-red-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div class="mb-6 px-4 py-3 rounded-lg bg-red-950/50 border border-red-800/50 flex items-start gap-3">
+      <svg class="w-4 h-4 text-red-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
       </svg>
-      <div>
-        <p class="text-sm font-medium text-red-200">Provider Error</p>
-        <p class="text-sm text-red-300 mt-1"><%= @job_application.provider_error %></p>
-      </div>
+      <p class="text-sm text-red-300"><%= @job_application.provider_error %></p>
     </div>
   <% end %>
 
-  <%# Details grid %>
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-    <div class="bg-gray-900 border border-gray-800 rounded-lg p-4">
-      <h3 class="text-sm font-medium text-gray-400 mb-3">Details</h3>
-      <dl class="space-y-2 text-sm">
-        <div class="flex justify-between">
-          <dt class="text-gray-500">Location</dt>
-          <dd class="text-gray-200"><%= @job_application.location.presence || "—" %></dd>
-        </div>
-        <div class="flex justify-between">
-          <dt class="text-gray-500">Arrangement</dt>
-          <dd class="text-gray-200"><%= @job_application.work_arrangement&.capitalize || "—" %></dd>
-        </div>
-        <div class="flex justify-between">
-          <dt class="text-gray-500">Salary</dt>
-          <dd class="text-gray-200"><%= @job_application.salary_range.presence || "—" %></dd>
-        </div>
-        <div class="flex justify-between">
-          <dt class="text-gray-500">Contact</dt>
-          <dd class="text-gray-200"><%= @job_application.contact_email.presence || "—" %></dd>
-        </div>
-        <% if @job_application.job_url.present? %>
-          <div class="flex justify-between">
-            <dt class="text-gray-500">Job URL</dt>
-            <dd><%= link_to "View posting", @job_application.job_url, target: "_blank", class: "text-blue-400 hover:text-blue-300" %></dd>
-          </div>
-        <% end %>
-      </dl>
-    </div>
+  <%# Two-column layout %>
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-    <div class="bg-gray-900 border border-gray-800 rounded-lg p-4">
-      <h3 class="text-sm font-medium text-gray-400 mb-3">Timeline</h3>
-      <dl class="space-y-2 text-sm">
-        <div class="flex justify-between">
-          <dt class="text-gray-500">Saved</dt>
-          <dd class="text-gray-200"><%= @job_application.created_at.strftime("%b %d, %Y") %></dd>
-        </div>
-        <div class="flex justify-between">
-          <dt class="text-gray-500">Applied</dt>
-          <dd class="text-gray-200"><%= @job_application.applied_at&.strftime("%b %d, %Y") || "—" %></dd>
-        </div>
-        <div class="flex justify-between">
-          <dt class="text-gray-500">Last updated</dt>
-          <dd class="text-gray-200"><%= @job_application.updated_at.strftime("%b %d, %Y") %></dd>
-        </div>
-      </dl>
-    </div>
-  </div>
+    <%# LEFT SIDEBAR — Job overview (sticky) %>
+    <div class="lg:col-span-4 space-y-4">
+      <div class="lg:sticky lg:top-24 space-y-4">
 
-  <%# Required Skills %>
-  <% if @job_application.skills_list.any? %>
-    <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 mb-6">
-      <div class="flex items-center justify-between mb-3">
-        <h3 class="text-sm font-medium text-gray-400">Required Skills</h3>
-        <%= form_with url: generate_skills_analysis_job_application_path(@job_application), method: :post, data: { controller: "loading", action: "submit->loading#submit" } do %>
-          <button type="submit" data-loading-target="button" class="text-xs font-medium px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition-colors inline-flex items-center gap-2">
-            <svg data-loading-target="spinner" class="hidden animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <span data-loading-target="text"><%= @job_application.has_skills_analysis? ? "Reanalyze" : "Analyze Skills" %></span>
-          </button>
-        <% end %>
-      </div>
-      <div class="flex flex-wrap gap-2">
-        <% @job_application.skills_list.each do |skill| %>
-          <% status = @job_application.skill_status(skill) %>
-          <% pill_classes = case status
-               when :matching then "bg-green-900/50 text-green-300 border-green-700/50"
-               when :missing then "bg-red-900/50 text-red-300 border-red-700/50"
-               else "bg-gray-800 text-gray-300 border-gray-700"
-             end %>
-          <span class="text-xs font-medium px-2.5 py-1 rounded-full border <%= pill_classes %>">
-            <%= skill %>
-          </span>
-        <% end %>
-      </div>
-    </div>
-  <% end %>
-
-  <%# Resume Suggestions %>
-  <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 mb-6">
-    <div class="flex items-center justify-between mb-3">
-      <h3 class="text-sm font-medium text-gray-400">Resume Suggestions</h3>
-      <%= form_with url: generate_resume_suggestions_job_application_path(@job_application), method: :post, data: { controller: "loading", action: "submit->loading#submit" } do %>
-        <button type="submit" data-loading-target="button" class="text-xs font-medium px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-700 text-white transition-colors inline-flex items-center gap-2">
-          <svg data-loading-target="spinner" class="hidden animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          <span data-loading-target="text"><%= @job_application.has_resume_suggestions? ? "Regenerate" : "Generate with AI" %></span>
-        </button>
-      <% end %>
-    </div>
-
-    <% if @job_application.has_resume_suggestions? %>
-      <div class="space-y-5">
-        <%# Rewrites %>
-        <% if @job_application.suggested_rewrites.any? %>
-          <div>
-            <div class="flex items-center gap-2 mb-3">
-              <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-              </svg>
-              <h4 class="text-sm font-medium text-blue-400">Suggested Rewrites</h4>
+        <%# Title + Score card %>
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+          <div class="flex items-start justify-between gap-3 mb-3">
+            <div class="min-w-0">
+              <h1 class="text-xl font-bold text-white leading-tight"><%= @job_application.job_title %></h1>
+              <p class="text-gray-400 mt-1"><%= @job_application.company_name %></p>
             </div>
-            <div class="space-y-3">
-              <% @job_application.suggested_rewrites.each do |item| %>
-                <div class="pl-6 space-y-1">
-                  <div class="flex items-start gap-2">
-                    <span class="text-red-400/70 text-xs mt-0.5 shrink-0">−</span>
-                    <span class="text-xs text-gray-500 line-through"><%= item["original"] %></span>
-                  </div>
-                  <div class="flex items-start gap-2">
-                    <span class="text-green-400/70 text-xs mt-0.5 shrink-0">+</span>
-                    <span class="text-xs text-green-300"><%= item["suggested"] %></span>
-                  </div>
-                  <p class="text-xs text-gray-500 pl-4"><%= item["reason"] %></p>
-                </div>
+            <% if @job_application.match_score.present? %>
+              <% score = @job_application.match_score %>
+              <% score_color = case score
+                   when 80..100 then "text-green-400 border-green-500/30 bg-green-500/10"
+                   when 60..79 then "text-blue-400 border-blue-500/30 bg-blue-500/10"
+                   when 40..59 then "text-yellow-400 border-yellow-500/30 bg-yellow-500/10"
+                   else "text-red-400 border-red-500/30 bg-red-500/10"
+                 end %>
+              <div class="<%= score_color %> border rounded-xl px-3 py-2 text-center shrink-0">
+                <div class="text-2xl font-bold leading-none"><%= score %></div>
+                <div class="text-[10px] uppercase tracking-wider mt-0.5 opacity-70">match</div>
+              </div>
+            <% end %>
+          </div>
+
+          <% if @job_application.match_score_reasoning.present? %>
+            <p class="text-xs text-gray-500 leading-relaxed mb-4"><%= @job_application.match_score_reasoning %></p>
+          <% end %>
+
+          <%# Status pills %>
+          <div data-controller="status">
+            <div class="flex flex-wrap gap-1.5">
+              <% JobApplication::STATUSES.each do |status| %>
+                <% is_current = status == @job_application.status %>
+                <button
+                  type="button"
+                  data-status-target="button"
+                  data-status="<%= status %>"
+                  data-url="<%= update_status_job_application_path(@job_application, status: status) %>"
+                  data-action="click->status#select"
+                  class="text-[11px] font-medium px-2.5 py-1 rounded-full border transition-colors <%= is_current ? 'bg-blue-600 border-blue-600 text-white' : 'border-gray-700 text-gray-400 hover:bg-gray-800 hover:text-gray-300' %>"
+                >
+                  <%= status.capitalize %>
+                </button>
               <% end %>
             </div>
           </div>
-        <% end %>
+        </div>
 
-        <%# Additions %>
-        <% if @job_application.suggested_additions.any? %>
-          <div>
-            <div class="flex items-center gap-2 mb-3">
-              <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-              </svg>
-              <h4 class="text-sm font-medium text-emerald-400">Suggested Additions</h4>
-            </div>
-            <div class="space-y-3">
-              <% @job_application.suggested_additions.each do |item| %>
-                <div class="pl-6 space-y-1">
-                  <div class="flex items-start gap-2">
-                    <span class="text-emerald-400/70 text-xs mt-0.5 shrink-0">+</span>
-                    <span class="text-xs text-emerald-300"><%= item["suggested"] %></span>
-                  </div>
-                  <p class="text-xs text-gray-500 pl-4">
-                    <span class="text-gray-600">Section:</span> <%= item["section"] %> · <%= item["reason"] %>
-                  </p>
-                </div>
+        <%# Details card %>
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+          <dl class="space-y-3 text-sm">
+            <% if @job_application.location.present? %>
+              <div class="flex items-center gap-2.5">
+                <svg class="w-4 h-4 text-gray-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                <span class="text-gray-300"><%= @job_application.location %></span>
+                <% if @job_application.work_arrangement.present? %>
+                  <span class="text-[10px] uppercase tracking-wider text-gray-500 bg-gray-800 px-1.5 py-0.5 rounded"><%= @job_application.work_arrangement %></span>
+                <% end %>
+              </div>
+            <% end %>
+            <% if @job_application.salary_range.present? %>
+              <div class="flex items-center gap-2.5">
+                <svg class="w-4 h-4 text-gray-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <span class="text-gray-300"><%= @job_application.salary_range %></span>
+              </div>
+            <% end %>
+            <% if @job_application.contact_email.present? %>
+              <div class="flex items-center gap-2.5">
+                <svg class="w-4 h-4 text-gray-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                <span class="text-gray-300 truncate"><%= @job_application.contact_email %></span>
+              </div>
+            <% end %>
+            <% if @job_application.job_url.present? %>
+              <div class="flex items-center gap-2.5">
+                <svg class="w-4 h-4 text-gray-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+                <%= link_to "View posting →", @job_application.job_url, target: "_blank", class: "text-blue-400 hover:text-blue-300 transition-colors" %>
+              </div>
+            <% end %>
+          </dl>
+
+          <div class="border-t border-gray-800 mt-4 pt-4">
+            <dl class="grid grid-cols-2 gap-3 text-xs">
+              <div>
+                <dt class="text-gray-600">Saved</dt>
+                <dd class="text-gray-400 mt-0.5"><%= @job_application.created_at.strftime("%b %d, %Y") %></dd>
+              </div>
+              <div>
+                <dt class="text-gray-600">Applied</dt>
+                <dd class="text-gray-400 mt-0.5"><%= @job_application.applied_at&.strftime("%b %d, %Y") || "—" %></dd>
+              </div>
+            </dl>
+          </div>
+        </div>
+
+        <%# Skills card %>
+        <% if @job_application.skills_list.any? %>
+          <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+            <h3 class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">Skills Match</h3>
+            <div class="flex flex-wrap gap-1.5">
+              <% @job_application.skills_list.each do |skill| %>
+                <% s = @job_application.skill_status(skill) %>
+                <% pill = case s
+                     when :matching then "bg-green-950/50 text-green-400 border-green-800/50"
+                     when :missing then "bg-red-950/50 text-red-400 border-red-800/50"
+                     else "bg-gray-800/50 text-gray-400 border-gray-700/50"
+                   end %>
+                <span class="text-[11px] font-medium px-2 py-0.5 rounded-full border <%= pill %>"><%= skill %></span>
               <% end %>
             </div>
+            <% if @job_application.has_skills_analysis? %>
+              <div class="flex items-center gap-3 mt-3 text-xs">
+                <span class="flex items-center gap-1 text-green-500">
+                  <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                  <%= @job_application.matching_skills.size %> matched
+                </span>
+                <span class="flex items-center gap-1 text-red-500">
+                  <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                  <%= @job_application.missing_skills.size %> gaps
+                </span>
+              </div>
+            <% end %>
           </div>
         <% end %>
-      </div>
-    <% else %>
-      <p class="text-gray-500 text-sm">No resume suggestions yet. Click "Generate with AI" to get tailored bullet point rewrites for this role.</p>
-    <% end %>
-  </div>
 
-  <%# Job Description %>
-  <% if @job_application.job_description.present? %>
-    <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 mb-6">
-      <h3 class="text-sm font-medium text-gray-400 mb-3">Job Description</h3>
-      <div class="text-gray-300 text-sm whitespace-pre-wrap"><%= @job_application.job_description %></div>
-    </div>
-  <% end %>
-
-  <%# Application Instructions %>
-  <% if @job_application.application_instructions.present? %>
-    <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 mb-6">
-      <h3 class="text-sm font-medium text-gray-400 mb-3">Application Instructions</h3>
-      <div class="text-gray-300 text-sm whitespace-pre-wrap"><%= @job_application.application_instructions %></div>
-    </div>
-  <% end %>
-
-  <%# Notes %>
-  <% if @job_application.notes.present? %>
-    <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 mb-6">
-      <h3 class="text-sm font-medium text-gray-400 mb-3">Notes</h3>
-      <div class="text-gray-300 text-sm whitespace-pre-wrap"><%= @job_application.notes %></div>
-    </div>
-  <% end %>
-
-  <%# Cover Letter %>
-  <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 mb-6" data-controller="clipboard regenerate-modal" data-action="keydown@document->regenerate-modal#closeOnEscape">
-    <div class="flex items-center justify-between mb-3">
-      <h3 class="text-sm font-medium text-gray-400">Cover Letter</h3>
-      <div class="flex items-center gap-2">
-        <% if @job_application.cover_letter.present? %>
-          <button
-            type="button"
-            data-clipboard-target="button"
-            data-action="click->clipboard#copy"
-            class="text-xs font-medium px-3 py-1.5 rounded-lg bg-gray-700 hover:bg-gray-600 text-white transition-colors"
-          >
-            Copy
-          </button>
-          <button
-            type="button"
-            data-action="click->regenerate-modal#open"
-            class="text-xs font-medium p-1.5 rounded-lg bg-gray-700 hover:bg-gray-600 text-white transition-colors"
-            title="Regenerate with feedback"
-          >
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-            </svg>
-          </button>
-        <% end %>
-        <%= form_with url: generate_cover_letter_job_application_path(@job_application), method: :post, data: { controller: "loading", action: "submit->loading#submit" } do %>
-          <button type="submit" data-loading-target="button" class="text-xs font-medium px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors inline-flex items-center gap-2">
-            <svg data-loading-target="spinner" class="hidden animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <span data-loading-target="text">Generate with AI</span>
-          </button>
-        <% end %>
       </div>
     </div>
-    <% if @job_application.cover_letter.present? %>
-      <div data-clipboard-target="source" class="text-gray-300 text-sm whitespace-pre-wrap"><%= @job_application.cover_letter %></div>
-    <% else %>
-      <p class="text-gray-500 text-sm">No cover letter yet. Click "Generate with AI" to create one based on your resume and this job description.</p>
-    <% end %>
 
-    <%# Regenerate with feedback modal %>
-    <div data-regenerate-modal-target="modal" data-action="click->regenerate-modal#closeOnBackdrop" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div class="bg-gray-900 border border-gray-700 rounded-xl shadow-xl w-full max-w-md mx-4 p-6">
+    <%# RIGHT MAIN CONTENT — Tabbed insights %>
+    <div class="lg:col-span-8" data-controller="tabs">
+
+      <%# Tab navigation %>
+      <div class="border-b border-gray-800 mb-6">
+        <nav class="flex gap-6 -mb-px">
+          <button data-tabs-target="tab" data-tabs-id="cover-letter" data-action="click->tabs#select"
+            class="pb-3 text-sm font-medium border-b-2 transition-colors cursor-pointer">
+            Cover Letter
+          </button>
+          <button data-tabs-target="tab" data-tabs-id="resume" data-action="click->tabs#select"
+            class="pb-3 text-sm font-medium border-b-2 transition-colors cursor-pointer">
+            Experience Writer
+          </button>
+          <button data-tabs-target="tab" data-tabs-id="projects" data-action="click->tabs#select"
+            class="pb-3 text-sm font-medium border-b-2 transition-colors cursor-pointer">
+            Projects
+          </button>
+          <button data-tabs-target="tab" data-tabs-id="details" data-action="click->tabs#select"
+            class="pb-3 text-sm font-medium border-b-2 transition-colors cursor-pointer">
+            Job Details
+          </button>
+        </nav>
+      </div>
+
+      <%# ==================== COVER LETTER TAB ==================== %>
+      <div data-tabs-target="panel" data-tabs-id="cover-letter" data-controller="clipboard regenerate-modal" data-action="keydown@document->regenerate-modal#closeOnEscape">
         <div class="flex items-center justify-between mb-4">
-          <h3 class="text-base font-semibold text-white">Regenerate Cover Letter</h3>
-          <button type="button" data-action="click->regenerate-modal#close" class="text-gray-400 hover:text-white transition-colors">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-            </svg>
-          </button>
+          <h2 class="text-lg font-semibold text-white">Cover Letter</h2>
+          <div class="flex items-center gap-2">
+            <% if @job_application.cover_letter.present? %>
+              <button type="button" data-clipboard-target="button" data-action="click->clipboard#copy"
+                class="text-xs font-medium px-3 py-1.5 rounded-lg bg-gray-800 border border-gray-700 hover:bg-gray-700 text-gray-300 transition-colors">
+                Copy
+              </button>
+              <button type="button" data-action="click->regenerate-modal#open"
+                class="text-xs font-medium px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors">
+                Regenerate
+              </button>
+            <% end %>
+          </div>
         </div>
-        <p class="text-sm text-gray-400 mb-4">What should be different? (e.g. "emphasize more Rails experience", "make it less generic", "shorter conclusion")</p>
-        <%= form_with url: generate_cover_letter_job_application_path(@job_application), method: :post, data: { action: "submit->regenerate-modal#submit" } do |f| %>
-          <textarea
-            name="feedback"
-            data-regenerate-modal-target="feedback"
-            rows="3"
-            placeholder="Too generic, emphasize my Redis and background job experience more..."
-            class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 resize-none mb-4"
-          ></textarea>
-          <div class="flex justify-end gap-3">
-            <button type="button" data-action="click->regenerate-modal#close" class="text-xs font-medium px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white transition-colors">
-              Cancel
-            </button>
-            <button type="submit" data-regenerate-modal-target="button" class="text-xs font-medium px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors inline-flex items-center gap-2">
-              <svg data-regenerate-modal-target="spinner" class="hidden animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+
+        <% if @job_application.cover_letter.present? %>
+          <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
+            <div data-clipboard-target="source" class="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap"><%= @job_application.cover_letter %></div>
+          </div>
+        <% else %>
+          <div class="bg-gray-900 border border-gray-800 rounded-xl p-12 text-center">
+            <p class="text-gray-500 text-sm mb-3">Cover letters are generated manually.</p>
+            <%= form_with url: regenerate_cover_letter_job_application_path(@job_application), method: :post, class: "inline" do %>
+              <button type="submit" class="text-xs font-medium px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors">Generate Cover Letter</button>
+            <% end %>
+          </div>
+        <% end %>
+
+        <%# Regenerate modal %>
+        <div data-regenerate-modal-target="modal" data-action="click->regenerate-modal#closeOnBackdrop" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+          <div class="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl w-full max-w-md mx-4 p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-base font-semibold text-white">Regenerate Cover Letter</h3>
+              <button type="button" data-action="click->regenerate-modal#close" class="text-gray-400 hover:text-white transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+              </button>
+            </div>
+            <p class="text-sm text-gray-400 mb-4">What should be different?</p>
+            <%= form_with url: regenerate_cover_letter_job_application_path(@job_application), method: :post, data: { action: "submit->regenerate-modal#submit" } do |f| %>
+              <textarea name="feedback" data-regenerate-modal-target="feedback" rows="3"
+                placeholder="Emphasize my Redis and background job experience more..."
+                class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 resize-none mb-4"></textarea>
+              <div class="flex justify-end gap-3">
+                <button type="button" data-action="click->regenerate-modal#close" class="text-xs font-medium px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 transition-colors">Cancel</button>
+                <button type="submit" data-regenerate-modal-target="button" class="text-xs font-medium px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors inline-flex items-center gap-2">
+                  <svg data-regenerate-modal-target="spinner" class="hidden animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span data-regenerate-modal-target="text">Regenerate</span>
+                </button>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+
+      <%# ==================== EXPERIENCE WRITER TAB ==================== %>
+      <div data-tabs-target="panel" data-tabs-id="resume" class="hidden">
+        <h2 class="text-lg font-semibold text-white mb-4">Experience Writer</h2>
+
+        <%# Experience Tailoring %>
+        <% if @job_application.has_experience_tailoring? %>
+          <div class="mb-6">
+            <h3 class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">Tailored Bullets (Google X-Y-Z)</h3>
+            <div class="space-y-4">
+              <% @job_application.tailored_jobs.each do |job| %>
+                <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+                  <div class="flex items-baseline gap-2 mb-4">
+                    <h4 class="text-sm font-semibold text-white"><%= job["title"] %></h4>
+                    <span class="text-xs text-gray-500">· <%= job["company"] %></span>
+                  </div>
+                  <div class="space-y-3">
+                    <% (job["bullets"] || []).each do |bullet| %>
+                      <div class="space-y-1.5">
+                        <div class="flex items-start gap-2">
+                          <span class="text-red-500/60 text-xs mt-0.5 shrink-0 font-mono">-</span>
+                          <span class="text-xs text-gray-500 line-through leading-relaxed"><%= bullet["original"] %></span>
+                        </div>
+                        <div class="flex items-start gap-2">
+                          <span class="text-green-500/60 text-xs mt-0.5 shrink-0 font-mono">+</span>
+                          <span class="text-xs text-green-300 leading-relaxed"><%= bullet["tailored"] %></span>
+                        </div>
+                        <% if bullet["change_summary"].present? %>
+                          <p class="text-[11px] text-gray-600 pl-5"><%= bullet["change_summary"] %></p>
+                        <% end %>
+                      </div>
+                    <% end %>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        <% else %>
+          <div class="bg-gray-900 border border-gray-800 rounded-xl p-12 text-center">
+            <% if @job_application.insights_processing? %>
+              <svg class="animate-spin h-6 w-6 text-gray-600 mx-auto mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
-              <span data-regenerate-modal-target="text">Regenerate</span>
-            </button>
+              <p class="text-gray-500 text-sm">Writing experience bullets...</p>
+            <% else %>
+              <p class="text-gray-500 text-sm">No experience rewrites yet. Click "Regenerate" to generate tailored bullets.</p>
+            <% end %>
           </div>
         <% end %>
       </div>
-    </div>
-  </div>
 
-  <%# Back link %>
-  <div class="mt-8">
-    <%= link_to "← Back to applications", root_path, class: "text-gray-400 hover:text-gray-300 text-sm transition-colors" %>
+      <%# ==================== PROJECTS TAB ==================== %>
+      <div data-tabs-target="panel" data-tabs-id="projects" class="hidden">
+        <h2 class="text-lg font-semibold text-white mb-4">Project Strategy</h2>
+
+        <% if @job_application.has_project_recommendations? %>
+          <div class="space-y-4">
+            <%# Highlight %>
+            <% if @job_application.highlighted_projects.any? %>
+              <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+                <div class="flex items-center gap-2 mb-4">
+                  <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                  <h3 class="text-sm font-medium text-white">Feature These</h3>
+                </div>
+                <div class="space-y-4">
+                  <% @job_application.highlighted_projects.each do |project| %>
+                    <div>
+                      <p class="text-sm font-medium text-green-300"><%= project["project"] %></p>
+                      <p class="text-xs text-gray-400 mt-1 leading-relaxed"><%= project["reason"] %></p>
+                      <% if project["resume_bullets"].present? %>
+                        <div class="mt-2">
+                          <p class="text-[11px] text-gray-500 uppercase tracking-wide mb-1">Resume Bullets</p>
+                          <ul class="space-y-1">
+                            <% project["resume_bullets"].first(2).each do |bullet| %>
+                              <li class="text-xs text-green-200 leading-relaxed pl-3 border-l border-green-800/40">• <%= bullet %></li>
+                            <% end %>
+                          </ul>
+                        </div>
+                      <% end %>
+                      <% if project["talking_points"].present? %>
+                        <div class="mt-2 space-y-1">
+                          <% project["talking_points"].each do |point| %>
+                            <p class="text-xs text-gray-500 pl-3 border-l border-gray-800">💡 <%= point %></p>
+                          <% end %>
+                        </div>
+                      <% end %>
+                    </div>
+                  <% end %>
+                </div>
+              </div>
+            <% end %>
+
+            <%# Deprioritize %>
+            <% if @job_application.deprioritized_projects.any? %>
+              <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+                <div class="flex items-center gap-2 mb-4">
+                  <span class="w-2 h-2 rounded-full bg-yellow-500"></span>
+                  <h3 class="text-sm font-medium text-white">Deprioritize</h3>
+                </div>
+                <div class="space-y-4">
+                  <% @job_application.deprioritized_projects.each do |project| %>
+                    <div>
+                      <p class="text-sm font-medium text-yellow-300/80"><%= project["project"] %></p>
+                      <p class="text-xs text-gray-400 mt-1 leading-relaxed"><%= project["reason"] %></p>
+                      <% if project["resume_bullets"].present? %>
+                        <div class="mt-2">
+                          <p class="text-[11px] text-gray-500 uppercase tracking-wide mb-1">If Kept, Rewrite As</p>
+                          <ul class="space-y-1">
+                            <% project["resume_bullets"].first(2).each do |bullet| %>
+                              <li class="text-xs text-yellow-100 leading-relaxed pl-3 border-l border-yellow-800/40">• <%= bullet %></li>
+                            <% end %>
+                          </ul>
+                        </div>
+                      <% end %>
+                      <% if project["alternative"].present? %>
+                        <p class="text-xs text-gray-500 mt-1">→ <%= project["alternative"] %></p>
+                      <% end %>
+                    </div>
+                  <% end %>
+                </div>
+              </div>
+            <% end %>
+
+            <%# Missing / Build %>
+            <% if @job_application.missing_projects.any? %>
+              <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+                <div class="flex items-center gap-2 mb-4">
+                  <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                  <h3 class="text-sm font-medium text-white">Projects to Build</h3>
+                </div>
+                <div class="space-y-4">
+                  <% @job_application.missing_projects.each do |project| %>
+                    <div>
+                      <p class="text-sm font-medium text-blue-300"><%= project["idea"] %></p>
+                      <p class="text-xs text-gray-400 mt-1 leading-relaxed"><%= project["reason"] %></p>
+                      <% if project["resume_bullets"].present? %>
+                        <div class="mt-2">
+                          <p class="text-[11px] text-gray-500 uppercase tracking-wide mb-1">Resume Bullets</p>
+                          <ul class="space-y-1">
+                            <% project["resume_bullets"].first(2).each do |bullet| %>
+                              <li class="text-xs text-blue-100 leading-relaxed pl-3 border-l border-blue-800/40">• <%= bullet %></li>
+                            <% end %>
+                          </ul>
+                        </div>
+                      <% end %>
+                      <% if project["skills_demonstrated"].present? %>
+                        <div class="flex flex-wrap gap-1 mt-2">
+                          <% project["skills_demonstrated"].each do |skill| %>
+                            <span class="text-[10px] bg-blue-950/50 text-blue-400 border border-blue-800/50 px-1.5 py-0.5 rounded-full"><%= skill %></span>
+                          <% end %>
+                        </div>
+                      <% end %>
+                    </div>
+                  <% end %>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        <% else %>
+          <div class="bg-gray-900 border border-gray-800 rounded-xl p-12 text-center">
+            <% if @job_application.insights_processing? %>
+              <svg class="animate-spin h-6 w-6 text-gray-600 mx-auto mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <p class="text-gray-500 text-sm">Analyzing your projects...</p>
+            <% else %>
+              <p class="text-gray-500 text-sm">No project recommendations yet. Click "Regenerate" to get advice.</p>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+
+      <%# ==================== JOB DETAILS TAB ==================== %>
+      <div data-tabs-target="panel" data-tabs-id="details" class="hidden">
+        <h2 class="text-lg font-semibold text-white mb-4">Job Details</h2>
+        <div class="space-y-4">
+          <% if @job_application.job_description.present? %>
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+              <h3 class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">Description</h3>
+              <div class="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap"><%= @job_application.job_description %></div>
+            </div>
+          <% end %>
+
+          <% if @job_application.application_instructions.present? %>
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+              <h3 class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">How to Apply</h3>
+              <div class="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap"><%= @job_application.application_instructions %></div>
+            </div>
+          <% end %>
+
+          <% if @job_application.notes.present? %>
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+              <h3 class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">Notes</h3>
+              <div class="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap"><%= @job_application.notes %></div>
+            </div>
+          <% end %>
+
+          <% if @job_application.job_description.blank? && @job_application.notes.blank? %>
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-12 text-center">
+              <p class="text-gray-500 text-sm">No details available. <%= link_to "Edit this application", edit_job_application_path(@job_application), class: "text-blue-400 hover:text-blue-300" %> to add them.</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+    </div>
   </div>
 </div>

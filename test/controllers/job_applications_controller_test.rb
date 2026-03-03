@@ -25,7 +25,7 @@ class JobApplicationsControllerTest < ActionDispatch::IntegrationTest
   end
 
   # create
-  test "should create job_application" do
+  test "should create job_application and enqueue insights" do
     assert_difference("JobApplication.count") do
       post job_applications_url, params: {
         job_application: {
@@ -142,55 +142,25 @@ class JobApplicationsControllerTest < ActionDispatch::IntegrationTest
     assert_response :ok
   end
 
-  # generate_cover_letter
-  test "generate_cover_letter requires resume" do
-    Resume.delete_all
-    post generate_cover_letter_job_application_url(@job_application)
+  # regenerate_cover_letter
+  test "regenerate_cover_letter requires experience log" do
+    ExperienceEntry.delete_all
+    post regenerate_cover_letter_job_application_url(@job_application)
     assert_redirected_to job_application_url(@job_application)
-    assert_match /resume/i, flash[:alert]
+    assert_match /experience log/i, flash[:alert]
   end
 
-  test "generate_cover_letter succeeds with resume" do
-    stub_openrouter_success("Dear Hiring Manager...")
-
-    post generate_cover_letter_job_application_url(@job_application)
+  test "regenerate_cover_letter enqueues job" do
+    post regenerate_cover_letter_job_application_url(@job_application)
     assert_redirected_to job_application_url(@job_application)
-    assert_match /generated/i, flash[:notice]
-
-    @job_application.reload
-    assert_not_nil @job_application.cover_letter
+    assert_match /regenerating/i, flash[:notice]
   end
 
-  test "generate_cover_letter handles LLM error" do
-    stub_openrouter_error(message: "Service down")
-
-    post generate_cover_letter_job_application_url(@job_application)
+  # regenerate_insights
+  test "regenerate_insights enqueues all insight jobs" do
+    post regenerate_insights_job_application_url(@job_application)
     assert_redirected_to job_application_url(@job_application)
-    assert flash[:alert].present?
-  end
-
-  # generate_skills_analysis
-  test "generate_skills_analysis requires resume" do
-    Resume.delete_all
-    post generate_skills_analysis_job_application_url(@job_application)
-    assert_redirected_to job_application_url(@job_application)
-    assert_match /resume/i, flash[:alert]
-  end
-
-  test "generate_skills_analysis succeeds with resume" do
-    analysis = {
-      matching_skills: [],
-      missing_skills: []
-    }.to_json
-
-    stub_openrouter_success(analysis)
-
-    post generate_skills_analysis_job_application_url(@job_application)
-    assert_redirected_to job_application_url(@job_application)
-    assert_match /generated/i, flash[:notice]
-
-    @job_application.reload
-    assert @job_application.has_skills_analysis?
+    assert_match /regenerating/i, flash[:notice]
   end
 
   # destroy

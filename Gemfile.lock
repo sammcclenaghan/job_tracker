@@ -102,12 +102,19 @@ GEM
     drb (2.2.3)
     erb (6.0.1)
     erubi (1.13.1)
+    et-orbi (1.4.0)
+      tzinfo
+    event_stream_parser (1.0.0)
     faraday (2.14.0)
       faraday-net_http (>= 2.0, < 3.5)
       json
       logger
+    faraday-multipart (1.2.0)
+      multipart-post (~> 2.0)
     faraday-net_http (3.4.2)
       net-http (~> 0.5)
+    faraday-retry (2.4.0)
+      faraday (~> 2.0)
     ffi (1.17.3-aarch64-linux-gnu)
     ffi (1.17.3-aarch64-linux-musl)
     ffi (1.17.3-arm-linux-gnu)
@@ -116,6 +123,9 @@ GEM
     ffi (1.17.3-x86_64-darwin)
     ffi (1.17.3-x86_64-linux-gnu)
     ffi (1.17.3-x86_64-linux-musl)
+    fugit (1.12.1)
+      et-orbi (~> 1.4)
+      raabro (~> 1.4)
     globalid (1.3.0)
       activesupport (>= 6.1)
     hashdiff (1.2.1)
@@ -156,6 +166,7 @@ GEM
     minitest (6.0.1)
       prism (~> 1.5)
     msgpack (1.8.0)
+    multipart-post (2.4.1)
     net-http (0.9.1)
       uri (>= 0.11.1)
     net-imap (0.6.2)
@@ -202,6 +213,7 @@ GEM
     public_suffix (7.0.2)
     puma (7.1.0)
       nio4r (~> 2.0)
+    raabro (1.4.0)
     racc (1.8.1)
     rack (3.2.4)
     rack-session (2.1.1)
@@ -283,7 +295,25 @@ GEM
     ruby-vips (2.3.0)
       ffi (~> 1.12)
       logger
+    ruby_llm (1.12.1)
+      base64
+      event_stream_parser (~> 1)
+      faraday (>= 2.0)
+      faraday-multipart (>= 1)
+      faraday-net_http (>= 1)
+      faraday-retry (>= 2.0)
+      marcel (~> 1)
+      ruby_llm-schema (~> 0)
+      zeitwerk (~> 2)
+    ruby_llm-schema (0.3.0)
     securerandom (0.4.1)
+    solid_queue (1.3.2)
+      activejob (>= 7.1)
+      activerecord (>= 7.1)
+      concurrent-ruby (>= 1.3.1)
+      fugit (~> 1.11)
+      railties (>= 7.1)
+      thor (>= 1.3.1)
     sqlite3 (2.9.0-aarch64-linux-gnu)
     sqlite3 (2.9.0-aarch64-linux-musl)
     sqlite3 (2.9.0-arm-linux-gnu)
@@ -355,7 +385,6 @@ DEPENDENCIES
   brakeman
   bundler-audit
   debug
-  faraday
   image_processing (~> 1.2)
   importmap-rails
   jbuilder
@@ -363,6 +392,8 @@ DEPENDENCIES
   puma (>= 5.0)
   rails (~> 8.1.2)
   rubocop-rails-omakase
+  ruby_llm
+  solid_queue
   sqlite3 (>= 2.1)
   stimulus-rails
   tailwindcss-rails

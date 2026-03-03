@@ -1,26 +1,79 @@
-<div class="max-w-4xl mx-auto">
-  <h1 class="text-2xl font-bold text-white mb-6">Edit Resume</h1>
+<div class="max-w-5xl mx-auto space-y-6">
+  <div>
+    <h1 class="text-2xl font-bold text-white">Manage Experience Log</h1>
+    <p class="text-sm text-gray-400 mt-1">Store raw evidence here. Include extra work that may not appear on your final resume.</p>
+  </div>
 
-  <%= form_with model: @resume, url: resume_path, method: :patch, class: "space-y-6" do |f| %>
-    <% if @resume.errors.any? %>
-      <div class="bg-red-900/50 border border-red-700 text-red-200 px-4 py-3 rounded-lg">
-        <ul class="list-disc list-inside text-sm">
-          <% @resume.errors.full_messages.each do |msg| %>
-            <li><%= msg %></li>
-          <% end %>
-        </ul>
+  <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+    <h2 class="text-lg font-semibold text-white mb-4">Add Entry</h2>
+    <%= form_with model: @experience_entry, url: experience_entries_path, class: "space-y-4" do |f| %>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <%= f.label :entry_type, class: "block text-sm text-gray-300 mb-1" %>
+          <%= f.select :entry_type, ExperienceEntry::ENTRY_TYPES.map { |t| [t.capitalize, t] }, {}, class: "w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200" %>
+        </div>
+        <div>
+          <%= f.label :title, class: "block text-sm text-gray-300 mb-1" %>
+          <%= f.text_field :title, required: true, placeholder: "Full Stack Developer Intern", class: "w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200" %>
+        </div>
+        <div>
+          <%= f.label :organization, class: "block text-sm text-gray-300 mb-1" %>
+          <%= f.text_field :organization, placeholder: "Leanpub", class: "w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200" %>
+        </div>
+        <div>
+          <%= f.label :date_range, class: "block text-sm text-gray-300 mb-1" %>
+          <%= f.text_field :date_range, placeholder: "May 2025 - Dec 2025", class: "w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200" %>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <%= f.label :location, class: "block text-sm text-gray-300 mb-1" %>
+          <%= f.text_field :location, placeholder: "Victoria, BC", class: "w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200" %>
+        </div>
+        <div>
+          <%= f.label :technologies, class: "block text-sm text-gray-300 mb-1" %>
+          <%= f.text_field :technologies, placeholder: "Ruby on Rails, Redis, GraphQL, AWS S3", class: "w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200" %>
+        </div>
+      </div>
+
+      <div>
+        <%= f.label :tags, class: "block text-sm text-gray-300 mb-1" %>
+        <%= f.text_field :tags, placeholder: "testing, backend, api, infrastructure", class: "w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200" %>
+      </div>
+
+      <div>
+        <%= f.label :details, "Evidence / Raw Notes", class: "block text-sm text-gray-300 mb-1" %>
+        <%= f.text_area :details, rows: 8, required: true, placeholder: "- What you built\n- Why it mattered\n- Metrics\n- Edge cases/debugging work\n- Anything that might be relevant to future jobs", class: "w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 whitespace-pre-wrap" %>
+      </div>
+
+      <div class="flex gap-3">
+        <%= f.submit "Add Entry", class: "bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg" %>
+        <%= link_to "Back", resume_path, class: "text-gray-400 hover:text-gray-300 text-sm px-3 py-2" %>
       </div>
     <% end %>
+  </div>
 
-    <div>
-      <%= f.label :content, "Resume Content", class: "block text-sm font-medium text-gray-300 mb-1" %>
-      <p class="text-gray-500 text-sm mb-2">Paste your full resume text below. This will be used to generate tailored cover letters.</p>
-      <%= f.text_area :content, rows: 25, placeholder: "Paste your resume here...\n\nInclude:\n- Contact information\n- Summary/objective\n- Work experience\n- Education\n- Skills", class: "w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm" %>
-    </div>
-
-    <div class="flex items-center gap-4">
-      <%= f.submit "Save Resume", class: "bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 rounded-lg transition-colors cursor-pointer" %>
-      <%= link_to "Cancel", resume_path, class: "text-gray-400 hover:text-gray-300 transition-colors" %>
-    </div>
-  <% end %>
+  <div class="space-y-4">
+    <% @entries.each do |entry| %>
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+        <%= form_with model: entry, url: experience_entry_path(entry), method: :patch, class: "space-y-3" do |f| %>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <%= f.select :entry_type, ExperienceEntry::ENTRY_TYPES.map { |t| [t.capitalize, t] }, {}, class: "bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200" %>
+            <%= f.text_field :title, class: "bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200" %>
+            <%= f.text_field :organization, placeholder: "Organization", class: "bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200" %>
+            <%= f.text_field :date_range, placeholder: "Date range", class: "bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200" %>
+            <%= f.text_field :location, placeholder: "Location", class: "bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200" %>
+            <%= f.text_field :technologies, placeholder: "Technologies", class: "bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200" %>
+          </div>
+          <%= f.text_field :tags, placeholder: "Tags", class: "w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200" %>
+          <%= f.text_area :details, rows: 6, class: "w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 whitespace-pre-wrap" %>
+          <div class="flex items-center gap-3">
+            <%= f.submit "Save", class: "bg-gray-700 hover:bg-gray-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg" %>
+            <%= link_to "Delete", experience_entry_path(entry), data: { turbo_method: :delete, turbo_confirm: "Delete this entry?" }, class: "bg-red-900/50 hover:bg-red-800/60 border border-red-800 text-red-300 text-xs font-medium px-3 py-1.5 rounded-lg" %>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
 </div>
