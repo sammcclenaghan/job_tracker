@@ -35,14 +35,14 @@ class JobApplication < ApplicationRecord
 
   def status_badge_classes
     colors = {
-      "saved" => "bg-gray-100 text-gray-700",
-      "applied" => "bg-blue-100 text-blue-700",
-      "interviewing" => "bg-yellow-100 text-yellow-700",
-      "offer" => "bg-green-100 text-green-700",
-      "rejected" => "bg-red-100 text-red-700",
-      "withdrawn" => "bg-purple-100 text-purple-700"
+      "saved" => "bg-gray-100 text-gray-600 border border-gray-200",
+      "applied" => "bg-blue-50 text-blue-700 border border-blue-200",
+      "interviewing" => "bg-amber-50 text-amber-700 border border-amber-200",
+      "offer" => "bg-emerald-50 text-emerald-700 border border-emerald-200",
+      "rejected" => "bg-red-50 text-red-700 border border-red-200",
+      "withdrawn" => "bg-purple-50 text-purple-700 border border-purple-200"
     }
-    colors[status] || "bg-gray-100 text-gray-700"
+    colors[status] || "bg-gray-100 text-gray-600 border border-gray-200"
   end
 
   def skills_list

@@ -1,22 +1,22 @@
 <div class="max-w-3xl mx-auto">
   <div class="flex items-center justify-between mb-6">
-    <h1 class="text-2xl font-bold text-white">Paste & Parse</h1>
-    <%= link_to new_job_application_path, class: "text-blue-400 hover:text-blue-300 text-sm transition-colors" do %>
+    <h1 class="text-2xl font-bold text-gray-900">Paste & Parse</h1>
+    <%= link_to new_job_application_path, class: "text-gh-green hover:text-gh-green-light text-sm font-medium transition-colors" do %>
       Or fill in manually
     <% end %>
   </div>
 
-  <p class="text-gray-400 mb-6">Paste a job posting below and we'll extract the details automatically using AI.</p>
+  <p class="text-gray-500 mb-6">Paste a job posting below and we'll extract the details automatically using AI.</p>
 
   <%= form_with url: create_from_paste_job_applications_path, method: :post, class: "space-y-6" do |f| %>
     <div>
-      <%= f.label :raw_content, "Job Posting", class: "block text-sm font-medium text-gray-300 mb-1" %>
-      <%= f.text_area :raw_content, rows: 15, placeholder: "Paste the full job posting here...", required: true, class: "w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" %>
+      <%= f.label :raw_content, "Job Posting", class: "block text-sm font-medium text-gray-700 mb-1" %>
+      <%= f.text_area :raw_content, rows: 15, placeholder: "Paste the full job posting here...", required: true, class: "w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gh-green/30 focus:border-gh-green" %>
     </div>
 
     <div class="flex items-center gap-4">
-      <%= f.submit "Parse & Create", class: "bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 rounded-lg transition-colors cursor-pointer" %>
-      <%= link_to "Cancel", root_path, class: "text-gray-400 hover:text-gray-300 transition-colors" %>
+      <%= f.submit "Parse & Create", class: "bg-gh-green hover:bg-gh-green-light text-white font-semibold px-6 py-2 rounded-lg transition-colors cursor-pointer" %>
+      <%= link_to "Cancel", root_path, class: "text-gray-500 hover:text-gray-700 transition-colors" %>
     </div>
   <% end %>
 </div>

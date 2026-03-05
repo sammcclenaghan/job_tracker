@@ -108,7 +108,7 @@ class JobApplicationTest < ActiveSupport::TestCase
 
   test "status_badge_classes returns correct classes" do
     app = JobApplication.new(status: "applied")
-    assert_equal "bg-blue-100 text-blue-700", app.status_badge_classes
+    assert_equal "bg-blue-50 text-blue-700 border border-blue-200", app.status_badge_classes
   end
 
   # Skills methods

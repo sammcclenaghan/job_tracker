@@ -1,38 +1,38 @@
 <div class="max-w-5xl mx-auto">
   <div class="flex items-center justify-between mb-6">
-    <h1 class="text-2xl font-bold text-white">Experience Log</h1>
-    <%= link_to "Manage Entries", edit_resume_path, class: "bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors" %>
+    <h1 class="text-2xl font-bold text-gray-900">Experience Log</h1>
+    <%= link_to "Manage Entries", edit_resume_path, class: "bg-gh-green hover:bg-gh-green-light text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors" %>
   </div>
 
-  <p class="text-gray-400 text-sm mb-6">Use this as a master log of everything you've built. AI picks relevant evidence per job application.</p>
+  <p class="text-gray-500 text-sm mb-6">Use this as a master log of everything you've built. AI picks relevant evidence per job application.</p>
 
   <% if @entries.any? %>
     <div class="space-y-4">
       <% @entries.each do |entry| %>
-        <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+        <div class="bg-white border border-gh-border rounded-xl p-5 shadow-sm">
           <div class="flex items-center justify-between gap-4 mb-2">
             <div>
-              <p class="text-xs uppercase tracking-wider text-gray-500"><%= entry.entry_type %></p>
-              <h2 class="text-base font-semibold text-white"><%= entry.title %></h2>
+              <p class="text-xs uppercase tracking-wider text-gray-400 font-semibold"><%= entry.entry_type %></p>
+              <h2 class="text-base font-semibold text-gray-900"><%= entry.title %></h2>
             </div>
-            <p class="text-xs text-gray-500"><%= entry.date_range.presence || "Date range not set" %></p>
+            <p class="text-xs text-gray-400"><%= entry.date_range.presence || "Date range not set" %></p>
           </div>
 
-          <p class="text-sm text-gray-400 mb-2">
+          <p class="text-sm text-gray-500 mb-2">
             <%= [entry.organization, entry.location].compact_blank.join(" · ") %>
           </p>
           <% if entry.technologies.present? %>
-            <p class="text-xs text-blue-300 mb-2"><%= entry.technologies %></p>
+            <p class="text-xs text-gh-green font-medium mb-2"><%= entry.technologies %></p>
           <% end %>
-          <div class="text-sm text-gray-300 whitespace-pre-wrap"><%= entry.details %></div>
+          <div class="text-sm text-gray-700 whitespace-pre-wrap"><%= entry.details %></div>
         </div>
       <% end %>
     </div>
   <% else %>
-    <div class="bg-gray-900 border border-gray-800 rounded-lg p-8 text-center">
-      <p class="text-gray-400 mb-3">No experience entries yet.</p>
-      <p class="text-gray-500 text-sm mb-5">Add experience and projects in your log to power tailored AI output.</p>
-      <%= link_to "Add First Entry", edit_resume_path, class: "bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 rounded-lg transition-colors" %>
+    <div class="bg-white border border-gh-border rounded-xl p-8 text-center shadow-sm">
+      <p class="text-gray-500 mb-3">No experience entries yet.</p>
+      <p class="text-gray-400 text-sm mb-5">Add experience and projects in your log to power tailored AI output.</p>
+      <%= link_to "Add First Entry", edit_resume_path, class: "bg-gh-green hover:bg-gh-green-light text-white font-semibold px-6 py-2 rounded-lg transition-colors" %>
     </div>
   <% end %>
 </div>

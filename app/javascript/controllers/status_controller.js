@@ -12,20 +12,22 @@ export default class extends Controller {
     const url = button.dataset.url;
 
     this.buttonTargets.forEach((btn) => {
-      btn.classList.remove("bg-blue-600", "border-blue-600", "text-white");
+      btn.classList.remove("bg-gh-green", "border-gh-green", "text-white");
       btn.classList.add(
-        "border-gray-700",
-        "text-gray-300",
-        "hover:bg-gray-800",
+        "border-gray-300",
+        "text-gray-500",
+        "hover:bg-gray-100",
+        "hover:text-gray-700",
       );
     });
 
     button.classList.remove(
-      "border-gray-700",
-      "text-gray-300",
-      "hover:bg-gray-800",
+      "border-gray-300",
+      "text-gray-500",
+      "hover:bg-gray-100",
+      "hover:text-gray-700",
     );
-    button.classList.add("bg-blue-600", "border-blue-600", "text-white");
+    button.classList.add("bg-gh-green", "border-gh-green", "text-white");
 
     fetch(url, {
       method: "PATCH",
@@ -46,11 +48,12 @@ export default class extends Controller {
   }
 
   revertUI(button) {
-    button.classList.remove("bg-blue-600", "border-blue-600", "text-white");
+    button.classList.remove("bg-gh-green", "border-gh-green", "text-white");
     button.classList.add(
-      "border-gray-700",
-      "text-gray-300",
-      "hover:bg-gray-800",
+      "border-gray-300",
+      "text-gray-500",
+      "hover:bg-gray-100",
+      "hover:text-gray-700",
     );
   }
 }

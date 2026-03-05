@@ -20,11 +20,11 @@ export default class extends Controller {
   show(id) {
     this.tabTargets.forEach((tab) => {
       if (tab.dataset.tabsId === id) {
-        tab.classList.add("border-blue-500", "text-white");
-        tab.classList.remove("border-transparent", "text-gray-500", "hover:text-gray-300", "hover:border-gray-700");
+        tab.classList.add("border-gh-green", "text-gray-900");
+        tab.classList.remove("border-transparent", "text-gray-500", "hover:text-gray-700", "hover:border-gray-300");
       } else {
-        tab.classList.remove("border-blue-500", "text-white");
-        tab.classList.add("border-transparent", "text-gray-500", "hover:text-gray-300", "hover:border-gray-700");
+        tab.classList.remove("border-gh-green", "text-gray-900");
+        tab.classList.add("border-transparent", "text-gray-500", "hover:text-gray-700", "hover:border-gray-300");
       }
     });
 

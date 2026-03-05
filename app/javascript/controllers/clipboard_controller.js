@@ -32,13 +32,13 @@ export default class extends Controller {
   showSuccess() {
     const originalText = this.buttonTarget.textContent;
     this.buttonTarget.textContent = this.successTextValue;
-    this.buttonTarget.classList.add("bg-green-600");
-    this.buttonTarget.classList.remove("bg-gray-700", "hover:bg-gray-600");
+    this.buttonTarget.classList.add("bg-emerald-100", "text-emerald-700", "border-emerald-300");
+    this.buttonTarget.classList.remove("bg-white", "hover:bg-gray-50", "text-gray-700", "border-gray-300");
 
     setTimeout(() => {
       this.buttonTarget.textContent = originalText;
-      this.buttonTarget.classList.remove("bg-green-600");
-      this.buttonTarget.classList.add("bg-gray-700", "hover:bg-gray-600");
+      this.buttonTarget.classList.remove("bg-emerald-100", "text-emerald-700", "border-emerald-300");
+      this.buttonTarget.classList.add("bg-white", "hover:bg-gray-50", "text-gray-700", "border-gray-300");
     }, 2000);
   }
 }

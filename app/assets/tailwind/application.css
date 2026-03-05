@@ -1,1 +1,11 @@
 @import "tailwindcss";
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --color-gh-green: #047857;
+  --color-gh-green-light: #059669;
+  --color-gh-green-dark: #065f46;
+  --color-gh-bg: #f7f8fa;
+  --color-gh-card: #ffffff;
+  --color-gh-border: #e5e7eb;
+}
