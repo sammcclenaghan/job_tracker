@@ -3,7 +3,7 @@ Rails.application.routes.draw do
 
   get "skills_insights", to: "skills_insights#index", as: :skills_insights
 
-  resources :job_applications, except: [:index] do
+  resources :job_applications, except: [ :index ] do
     member do
       post :regenerate_cover_letter
       get :download_cover_letter

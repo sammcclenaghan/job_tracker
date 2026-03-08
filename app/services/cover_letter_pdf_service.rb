@@ -60,25 +60,22 @@ class CoverLetterPdfService
     Setting.get("profile_site") || PROFILE_DEFAULTS[:site]
   end
 
-  def date
-    Date.today.strftime("%B %d, %Y")
-  end
-
   def company_name
-    escape_typst(@job_application.company_name)
+    @job_application.company_name
   end
 
   def location
-    escape_typst(@job_application.location.presence || "")
+    @job_application.location.presence || ""
   end
 
   def cover_letter_body
-    escape_typst(@job_application.cover_letter || "")
+    @job_application.cover_letter || ""
   end
 
-  def escape_typst(text)
-    text.gsub("#", "\\#")
-        .gsub("@", "\\@")
+  def esc(text)
+    text.to_s
+        .gsub("#", "\\#")
+        .gsub("@", "\@")
         .gsub("$", "\\$")
         .gsub("<", "\\<")
         .gsub(">", "\\>")

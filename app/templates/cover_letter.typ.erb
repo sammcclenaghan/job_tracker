@@ -54,31 +54,31 @@
 #show: resume
 
 #header(
-  name: "<%= name %>",
-  phone: "<%= phone %>",
-  email: "<%= email %>",
-  linkedin: "<%= linkedin %>",
-  site: "<%= site %>",
+  name: "<%= esc(name) %>",
+  phone: "<%= esc(phone) %>",
+  email: "<%= esc(email) %>",
+  linkedin: "<%= esc(linkedin) %>",
+  site: "<%= esc(site) %>",
 )
 
 #v(1em)
 
-<%= date %>
+#datetime.today().display("[Month repr:long] [day], [year]")
 
 #v(1em)
 
-<%= company_name %>
+<%= esc(company_name) %>
 
-<%= location %>
+<%= esc(location) %>
 
 #v(1em)
 
 Dear Hiring Manager,
 
-<%= cover_letter_body %>
+<%= esc(cover_letter_body) %>
 
 #v(0.5em)
 
 Sincerely,
 
-<%= name %>
+<%= esc(name) %>
