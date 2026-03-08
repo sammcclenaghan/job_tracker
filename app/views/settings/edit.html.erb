@@ -80,6 +80,30 @@
       </div>
     </div>
 
+    <div class="bg-white border border-gh-border rounded-xl p-6 mb-6 shadow-sm">
+      <h2 class="text-lg font-semibold text-gray-900 mb-1">Cover Letter PDF Profile</h2>
+      <p class="text-xs text-gray-500 mb-5">Personal details used in the Typst cover letter header.</p>
+
+      <div class="space-y-4">
+        <% profile_fields = {
+          profile_name: { label: "Full Name", placeholder: "Sam McClenaghan" },
+          profile_phone: { label: "Phone", placeholder: "780-221-1327" },
+          profile_email: { label: "Email", placeholder: "sam@aream.ca" },
+          profile_linkedin: { label: "LinkedIn", placeholder: "linkedin.com/in/sam-mcclenaghan" },
+          profile_site: { label: "Website / GitHub", placeholder: "github.com/sammcclenaghan" }
+        } %>
+        <% profile_fields.each do |key, opts| %>
+          <div>
+            <label for="<%= key %>" class="block text-sm font-medium text-gray-700 mb-1"><%= opts[:label] %></label>
+            <input type="text" name="<%= key %>" id="<%= key %>"
+              value="<%= Setting.get(key.to_s) %>"
+              placeholder="<%= opts[:placeholder] %>"
+              class="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-gh-green focus:ring-1 focus:ring-gh-green/30">
+          </div>
+        <% end %>
+      </div>
+    </div>
+
     <div class="flex justify-end">
       <button type="submit" class="bg-gh-green hover:bg-gh-green-light text-white text-sm font-semibold px-6 py-2 rounded-lg transition-colors">
         Save Settings

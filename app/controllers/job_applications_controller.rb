@@ -1,7 +1,7 @@
 class JobApplicationsController < ApplicationController
   before_action :set_job_application, only: [
     :show, :edit, :update, :destroy, :update_status,
-    :regenerate_cover_letter, :regenerate_insights
+    :regenerate_cover_letter, :regenerate_insights, :download_cover_letter
   ]
 
   def show
@@ -100,6 +100,19 @@ class JobApplicationsController < ApplicationController
     feedback = params[:feedback].presence
     GenerateCoverLetterJob.perform_later(@job_application.id, feedback: feedback)
     redirect_to @job_application, notice: "Regenerating cover letter..."
+  end
+
+  def download_cover_letter
+    unless @job_application.cover_letter.present?
+      redirect_to @job_application, alert: "Generate a cover letter first."
+      return
+    end
+
+    service = CoverLetterPdfService.new(@job_application)
+    pdf_data = service.generate
+    send_data pdf_data, filename: service.filename, type: "application/pdf", disposition: "attachment"
+  rescue => e
+    redirect_to @job_application, alert: "PDF generation failed: #{e.message}"
   end
 
   def regenerate_insights

@@ -1,0 +1,84 @@
+#let resume(body) = {
+  set list(indent: 1em)
+  show list: set text(size: 0.92em)
+  show link: underline
+  show link: set underline(offset: 3pt)
+
+  set page(
+    paper: "us-letter",
+    margin: (x: 0.5in, y: 0.5in)
+  )
+
+  set text(
+    size: 11pt,
+    font: "New Computer Modern",
+  )
+
+  body
+}
+
+#let name_header(name) = {
+  set text(size: 2.25em)
+  [*#name*]
+}
+
+#let header(
+  name: "Jake Ryan",
+  phone: "123-456-7890",
+  email: "jake@su.edu",
+  linkedin: none,
+  site: none,
+) = {
+  if linkedin == none and site == none {
+    align(center,
+      block[
+        #name_header(name) \
+        #phone |
+        #link("mailto:" + email)[#email]
+      ]
+    )
+  } else {
+    align(center,
+      block[
+        #name_header(name) \
+        #phone |
+        #link("mailto:" + email)[#email] |
+        #link("https://" + linkedin)[Linkedin] |
+        #link("https://" + site)[Github]
+      ]
+    )
+  }
+  v(5pt)
+}
+
+#show: resume
+
+#header(
+  name: "<%= name %>",
+  phone: "<%= phone %>",
+  email: "<%= email %>",
+  linkedin: "<%= linkedin %>",
+  site: "<%= site %>",
+)
+
+#v(1em)
+
+<%= date %>
+
+#v(1em)
+
+<%= company_name %>
+
+<%= location %>
+
+#v(1em)
+
+Dear Hiring Manager,
+
+<%= cover_letter_body %>
+
+#v(0.5em)
+
+Sincerely,
+
+<%= name %>

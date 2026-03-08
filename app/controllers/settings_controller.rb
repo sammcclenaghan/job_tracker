@@ -23,6 +23,10 @@ class SettingsController < ApplicationController
     Setting.set("ollama_base_url", params[:ollama_base_url].presence || LlmService::DEFAULT_OLLAMA_URL)
     Setting.set("ollama_model", params[:ollama_model].presence || LlmService::DEFAULT_OLLAMA_MODEL)
 
+    %w[profile_name profile_phone profile_email profile_linkedin profile_site].each do |key|
+      Setting.set(key, params[key]) if params.key?(key)
+    end
+
     redirect_to settings_path, notice: "Settings saved."
   end
 end

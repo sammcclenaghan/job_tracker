@@ -40,9 +40,7 @@ class GenerateCoverLetterJob < ApplicationJob
 
             STRUCTURE:
 
-            GREETING:
-            - If a contact name is available, use "Dear [Name],". Otherwise use "Dear Hiring Manager,".
-            - Do NOT use "To Whom It May Concern".
+            OUTPUT ONLY THE BODY TEXT. Do NOT include any greeting (no "Dear Hiring Manager,", no "Dear [Name],") and no sign-off (no "Thanks,", no "Sincerely,", no name at the end). The greeting and sign-off are added separately by the PDF template.
 
             INTRODUCTION (1 paragraph):
             The goal is to pull the reader in and give high-level context for what follows.
@@ -66,8 +64,6 @@ class GenerateCoverLetterJob < ApplicationJob
             - Don't introduce anything new. Succinctly restate your interest and why you're a good fit.
             - Thank the reader for their time.
             - No need to repeat contact information (it's in the application or resume header).
-
-            Sign off: "Thanks, [First name from profile]"
 
             IMPORTANT -- WHAT YOU LEARNED vs WHAT YOU DID:
             Your resume already lists what you did and accomplished. The cover letter's job is different.
@@ -138,8 +134,6 @@ class GenerateCoverLetterJob < ApplicationJob
         {
           role: "assistant",
           content: <<~EXAMPLE
-            Dear Hiring Manager,
-
             I'm a Computer Science student at the University of Victoria, graduating April 2027, and I'm applying for the Software Developer Co-op at Fullscript. I came across your developer handbook a while back and the part about craftsmanship stuck with me. Building things carefully, owning what you ship. That lines up with how I work, and I think my experience with production Rails systems and infrastructure gives me a good foundation for this role.
 
             I spent eight months at Leanpub working in a big Rails monolith, and it's where I really started to understand what maintaining real software looks like. The part I got the most out of was building a background job tracking system with Redis and writing tests with RSpec and FactoryBot. Working in a codebase that other people depended on every day changed how I think about testing. It stopped being a chore and became just part of how I write code.
@@ -147,8 +141,6 @@ class GenerateCoverLetterJob < ApplicationJob
             At Trustscience I got more into the infrastructure side. I reworked a file storage system that cut our S3 costs by 15% and improved query performance by about 50% with DynamoDB. Between that and the Rails work at Leanpub, I've gotten comfortable moving between application code and the systems underneath it, which seems like a good fit for how Fullscript's team works.
 
             I'd welcome the chance to talk more about this role. Thank you for your time.
-
-            Thanks, Alex
           EXAMPLE
         },
         {

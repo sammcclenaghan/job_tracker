@@ -6,6 +6,7 @@ Rails.application.routes.draw do
   resources :job_applications, except: [:index] do
     member do
       post :regenerate_cover_letter
+      get :download_cover_letter
       post :regenerate_insights
       patch :update_status
     end
