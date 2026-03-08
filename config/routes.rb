@@ -1,6 +1,8 @@
 Rails.application.routes.draw do
   root "dashboard#index"
 
+  get "skills_insights", to: "skills_insights#index", as: :skills_insights
+
   resources :job_applications, except: [:index] do
     member do
       post :regenerate_cover_letter

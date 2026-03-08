@@ -21,6 +21,33 @@ class JobApplication < ApplicationRecord
   scope :recent, -> { order(created_at: :desc) }
   scope :applied, -> { where.not(status: "saved") }
 
+  def self.top_skills(limit: 20)
+    skills_data = {}
+
+    where.not(skills: [nil, "", "[]"]).find_each do |app|
+      app.skills_list.each do |skill|
+        normalized = skill.strip
+        next if normalized.blank?
+        key = normalized.downcase
+
+        skills_data[key] ||= { name: normalized, total: 0, matching: 0, missing: 0 }
+        skills_data[key][:total] += 1
+
+        if app.has_skills_analysis?
+          if app.matching_skills.any? { |s| s["skill"].downcase == key }
+            skills_data[key][:matching] += 1
+          elsif app.missing_skills.any? { |s| s["skill"].downcase == key }
+            skills_data[key][:missing] += 1
+          end
+        end
+      end
+    end
+
+    skills_data.values
+      .sort_by { |s| -s[:total] }
+      .first(limit)
+  end
+
   def status_color
     case status
     when "saved" then "gray"
