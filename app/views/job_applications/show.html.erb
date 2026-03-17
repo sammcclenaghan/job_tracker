@@ -337,6 +337,13 @@
                           </ul>
                         </div>
                       <% end %>
+                      <% if project["skills"].present? %>
+                        <div class="flex flex-wrap gap-1 mt-2">
+                          <% project["skills"].split(",").map(&:strip).each do |skill| %>
+                            <span class="text-[10px] bg-emerald-50 text-emerald-600 border border-emerald-200 px-1.5 py-0.5 rounded-full"><%= skill %></span>
+                          <% end %>
+                        </div>
+                      <% end %>
                       <% if project["talking_points"].present? %>
                         <div class="mt-2 space-y-1">
                           <% project["talking_points"].each do |point| %>
@@ -372,6 +379,13 @@
                           </ul>
                         </div>
                       <% end %>
+                      <% if project["skills"].present? %>
+                        <div class="flex flex-wrap gap-1 mt-2">
+                          <% project["skills"].split(",").map(&:strip).each do |skill| %>
+                            <span class="text-[10px] bg-amber-50 text-amber-600 border border-amber-200 px-1.5 py-0.5 rounded-full"><%= skill %></span>
+                          <% end %>
+                        </div>
+                      <% end %>
                       <% if project["alternative"].present? %>
                         <p class="text-xs text-gray-500 mt-1">→ <%= project["alternative"] %></p>
                       <% end %>
@@ -403,9 +417,10 @@
                           </ul>
                         </div>
                       <% end %>
-                      <% if project["skills_demonstrated"].present? %>
+                      <% skills = (project["skills_demonstrated"] || []) + (project["skills"].present? ? project["skills"].split(",").map(&:strip) : []) %>
+                      <% if skills.any? %>
                         <div class="flex flex-wrap gap-1 mt-2">
-                          <% project["skills_demonstrated"].each do |skill| %>
+                          <% skills.uniq.each do |skill| %>
                             <span class="text-[10px] bg-blue-50 text-blue-600 border border-blue-200 px-1.5 py-0.5 rounded-full"><%= skill %></span>
                           <% end %>
                         </div>

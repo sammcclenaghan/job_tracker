@@ -48,7 +48,8 @@ class GenerateProjectRecommendationsJob < ApplicationJob
                  "project": "project name from candidate log",
                  "reason": "one sentence on why this project matters for this role",
                  "talking_points": ["specific angle to emphasize in interviews", "another angle"],
-                 "resume_bullets": ["X-Y-Z bullet 1", "X-Y-Z bullet 2"]
+                 "resume_bullets": ["X-Y-Z bullet 1", "X-Y-Z bullet 2"],
+                 "skills": "comma-separated list of key technologies/frameworks used (e.g. Ruby, Rails, React, PostgreSQL)"
                }
 
             2. "deprioritize" - Projects less relevant for this specific role
@@ -56,15 +57,24 @@ class GenerateProjectRecommendationsJob < ApplicationJob
                  "project": "project name from candidate log",
                  "reason": "why this is less relevant",
                  "alternative": "what kind of project would be better in this slot",
-                 "resume_bullets": ["X-Y-Z bullet 1", "X-Y-Z bullet 2"]
+                 "resume_bullets": ["X-Y-Z bullet 1", "X-Y-Z bullet 2"],
+                 "skills": "comma-separated list of key technologies/frameworks used (e.g. Ruby, Rails, React, PostgreSQL)"
                }
 
             3. "missing" - Project ideas the candidate should build to strengthen their application (1-2 max)
+               CRITICAL: Do NOT suggest generic, textbook projects like "build a CLI that provisions cloud resources" or "create a CRUD app with X framework". These are soulless and unmotivating.
+               Instead, study the candidate's EXISTING projects closely - look at the domains they care about, the problems they've chosen to solve, and the tools they already use. Then suggest a project that:
+               - EXTENDS or builds on one of their existing projects in a way that adds a missing skill from the job description
+               - OR solves a real problem the candidate would personally encounter given their interests and background
+               - Feels like a natural next step in their journey, not a checkbox exercise
+               For example, if they built a music app, suggest adding real-time collaboration to it (gaining WebSocket experience) rather than "build a generic real-time chat app".
                Each object: {
-                 "idea": "brief project description",
+                 "idea": "brief project description rooted in candidate's existing work",
+                 "builds_on": "which existing project or interest this connects to",
                  "skills_demonstrated": ["skill1", "skill2"],
-                 "reason": "why this would help for this role",
-                 "resume_bullets": ["X-Y-Z bullet 1", "X-Y-Z bullet 2"]
+                 "reason": "why this would help for this role AND why it connects to what they already care about",
+                 "resume_bullets": ["X-Y-Z bullet 1", "X-Y-Z bullet 2"],
+                 "skills": "comma-separated list of key technologies/frameworks the project would demonstrate (e.g. Ruby, Rails, React, PostgreSQL)"
                }
 
             ## Writing rules
