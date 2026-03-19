@@ -28,7 +28,7 @@ class ExperienceProfileService
   def relevant_entries_for(job_application, limit:)
     terms = query_terms_for(job_application)
     scored = @entries.map do |entry|
-      [entry, relevance_score(entry, terms)]
+      [ entry, relevance_score(entry, terms) ]
     end
 
     top = scored

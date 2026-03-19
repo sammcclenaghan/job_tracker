@@ -24,7 +24,7 @@ class JobApplication < ApplicationRecord
   def self.top_skills(limit: 20)
     skills_data = {}
 
-    where.not(skills: [nil, "", "[]"]).find_each do |app|
+    where.not(skills: [ nil, "", "[]" ]).find_each do |app|
       app.skills_list.each do |skill|
         normalized = skill.strip
         next if normalized.blank?

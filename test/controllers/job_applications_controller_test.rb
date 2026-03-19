@@ -63,7 +63,7 @@ class JobApplicationsControllerTest < ActionDispatch::IntegrationTest
       "work_arrangement" => "remote",
       "salary_range" => "$100k",
       "job_description" => "Build stuff",
-      "skills" => ["Ruby"],
+      "skills" => [ "Ruby" ],
       "contact_email" => "test@test.com",
       "application_instructions" => "Apply now",
       "job_url" => "https://example.com"
