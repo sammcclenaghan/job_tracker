@@ -65,6 +65,8 @@ type Profile = {
   site: string;
 };
 
+type AiBusyState = "parse" | "insights" | "cover_letter" | null;
+
 const STATUSES: Status[] = [
   "saved",
   "applied",
@@ -119,6 +121,7 @@ const EMPTY_PROFILE: Profile = {
 };
 
 const STORAGE_KEY = "job-tracker-next-data";
+const API_KEY_STORAGE_KEY = "job-tracker-openrouter-api-key";
 
 function makeId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -393,6 +396,7 @@ export default function Home() {
   const [applications, setApplications] = useState<JobApplication[]>([]);
   const [entries, setEntries] = useState<ExperienceEntry[]>(SAMPLE_ENTRIES);
   const [profile, setProfile] = useState<Profile>(EMPTY_PROFILE);
+  const [openRouterApiKey, setOpenRouterApiKey] = useState("");
   const [activeView, setActiveView] = useState<View>("dashboard");
   const [statusFilter, setStatusFilter] = useState<Status | null>(null);
   const [selectedId, setSelectedId] = useState<string>("");
@@ -400,6 +404,7 @@ export default function Home() {
   const [pasteText, setPasteText] = useState("");
   const [entryDraft, setEntryDraft] = useState<ExperienceEntry>(blankEntry());
   const [hydrated, setHydrated] = useState(false);
+  const [aiBusy, setAiBusy] = useState<AiBusyState>(null);
   const [flash, setFlash] = useState<{ type: "notice" | "alert"; message: string } | null>(
     null
   );
@@ -416,6 +421,7 @@ export default function Home() {
         localStorage.removeItem(STORAGE_KEY);
       }
     }
+    setOpenRouterApiKey(localStorage.getItem(API_KEY_STORAGE_KEY) || "");
     setHydrated(true);
   }, []);
 
@@ -426,6 +432,15 @@ export default function Home() {
       JSON.stringify({ applications, entries, profile })
     );
   }, [applications, entries, profile, hydrated]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    if (openRouterApiKey.trim()) {
+      localStorage.setItem(API_KEY_STORAGE_KEY, openRouterApiKey.trim());
+    } else {
+      localStorage.removeItem(API_KEY_STORAGE_KEY);
+    }
+  }, [openRouterApiKey, hydrated]);
 
   useEffect(() => {
     if (!flash) return;
@@ -471,6 +486,28 @@ export default function Home() {
     setFlash({ type, message });
   }
 
+  async function callAi<T>(action: Exclude<AiBusyState, null>, payload: Record<string, unknown>) {
+    setAiBusy(action);
+    try {
+      const response = await fetch("/api/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action,
+          openRouterApiKey: openRouterApiKey.trim(),
+          ...payload,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "AI request failed.");
+      }
+      return data as T;
+    } finally {
+      setAiBusy(null);
+    }
+  }
+
   function navigate(view: View) {
     setActiveView(view);
     if (typeof window !== "undefined") {
@@ -478,9 +515,13 @@ export default function Home() {
     }
   }
 
-  function saveApplication(app: JobApplication, isNew: boolean) {
+  function saveApplication(
+    app: JobApplication,
+    isNew: boolean,
+    options: { rescore?: boolean } = {}
+  ) {
     const now = new Date().toISOString();
-    const scored = scoreApplication({ ...app, updatedAt: now }, entries);
+    const scored = options.rescore === false ? {} : scoreApplication({ ...app, updatedAt: now }, entries);
     const next = { ...app, ...scored, updatedAt: now };
     setApplications((current) => {
       return isNew || !current.some((item) => item.id === app.id)
@@ -512,17 +553,53 @@ export default function Home() {
     saveApplication(draft, false);
   }
 
-  function submitPaste(event: FormEvent) {
+  async function submitPaste(event: FormEvent) {
     event.preventDefault();
     if (!pasteText.trim()) {
       showFlash("alert", "Paste a job posting first.");
       return;
     }
-    const parsed = parseJobPosting(pasteText);
-    const app: JobApplication = { ...blankApplication(), ...parsed };
-    if (!app.companyName.trim()) app.companyName = "Untitled company";
-    if (!app.jobTitle.trim()) app.jobTitle = "Untitled role";
-    saveApplication(app, true);
+    try {
+      const parsed = await callAi<{
+        company_name?: string | null;
+        job_title?: string | null;
+        location?: string | null;
+        work_arrangement?: WorkArrangement | null;
+        salary_range?: string | null;
+        job_description?: string | null;
+        skills?: string[] | null;
+        contact_email?: string | null;
+        application_instructions?: string | null;
+        job_url?: string | null;
+      }>("parse", { rawContent: pasteText });
+      const app: JobApplication = {
+        ...blankApplication(),
+        companyName: parsed.company_name || "Untitled company",
+        jobTitle: parsed.job_title || "Untitled role",
+        location: parsed.location || "",
+        workArrangement: parsed.work_arrangement || "",
+        salaryRange: parsed.salary_range || "",
+        jobDescription: parsed.job_description || pasteText,
+        skills: Array.isArray(parsed.skills) ? parsed.skills.filter(Boolean) : [],
+        contactEmail: parsed.contact_email || "",
+        applicationInstructions: parsed.application_instructions || "",
+        jobUrl: parsed.job_url || "",
+      };
+      saveApplication(app, true);
+      await regenerateInsights(app, { quiet: true });
+    } catch (error) {
+      const fallback = parseJobPosting(pasteText);
+      const app: JobApplication = { ...blankApplication(), ...fallback };
+      if (!app.companyName.trim()) app.companyName = "Untitled company";
+      if (!app.jobTitle.trim()) app.jobTitle = "Untitled role";
+      saveApplication(app, true);
+      showFlash(
+        "alert",
+        error instanceof Error
+          ? `AI parsing failed, so I saved a basic draft instead: ${error.message}`
+          : "AI parsing failed, so I saved a basic draft instead."
+      );
+    }
   }
 
   function updateStatus(app: JobApplication, status: Status) {
@@ -551,31 +628,92 @@ export default function Home() {
     navigate("dashboard");
   }
 
-  function regenerateInsights(app: JobApplication) {
-    const scored = scoreApplication({ ...app, updatedAt: new Date().toISOString() }, entries);
-    setApplications((current) =>
-      current.map((item) =>
-        item.id === app.id
-          ? { ...item, ...scored, updatedAt: new Date().toISOString() }
-          : item
-      )
-    );
-    showFlash("notice", "Insights regenerated.");
+  async function regenerateInsights(
+    app: JobApplication,
+    options: { quiet?: boolean } = {}
+  ) {
+    try {
+      const insights = await callAi<{
+        match_score?: number;
+        match_reason?: string;
+        project_recommendations?: string[];
+        experience_tailoring?: string[];
+      }>("insights", { application: app, profile, entries });
+      setApplications((current) =>
+        current.map((item) =>
+          item.id === app.id
+            ? {
+                ...item,
+                matchScore: Number(insights.match_score || 0),
+                matchReason: insights.match_reason || "",
+                projectRecommendations: Array.isArray(insights.project_recommendations)
+                  ? insights.project_recommendations
+                  : [],
+                experienceTailoring: Array.isArray(insights.experience_tailoring)
+                  ? insights.experience_tailoring
+                  : [],
+                updatedAt: new Date().toISOString(),
+              }
+            : item
+        )
+      );
+      if (!options.quiet) showFlash("notice", "AI insights regenerated.");
+    } catch (error) {
+      const scored = scoreApplication({ ...app, updatedAt: new Date().toISOString() }, entries);
+      setApplications((current) =>
+        current.map((item) =>
+          item.id === app.id
+            ? { ...item, ...scored, updatedAt: new Date().toISOString() }
+            : item
+        )
+      );
+      showFlash(
+        "alert",
+        error instanceof Error
+          ? `AI insights failed, so I used a basic local estimate: ${error.message}`
+          : "AI insights failed, so I used a basic local estimate."
+      );
+    }
   }
 
-  function regenerateCoverLetter(app: JobApplication) {
-    setApplications((current) =>
-      current.map((item) =>
-        item.id === app.id
-          ? {
-              ...item,
-              coverLetter: generateCoverLetter(item, profile, entries),
-              updatedAt: new Date().toISOString(),
-            }
-          : item
-      )
-    );
-    showFlash("notice", "Cover letter generated.");
+  async function regenerateCoverLetter(app: JobApplication) {
+    try {
+      const result = await callAi<{ cover_letter?: string }>("cover_letter", {
+        application: app,
+        profile,
+        entries,
+      });
+      setApplications((current) =>
+        current.map((item) =>
+          item.id === app.id
+            ? {
+                ...item,
+                coverLetter: result.cover_letter || "",
+                updatedAt: new Date().toISOString(),
+              }
+            : item
+        )
+      );
+      showFlash("notice", "AI cover letter generated.");
+    } catch (error) {
+      setApplications((current) =>
+        current.map((item) =>
+          item.id === app.id
+            ? {
+                ...item,
+                coverLetter: generateCoverLetter(item, profile, entries),
+                updatedAt: new Date().toISOString(),
+              }
+            : item
+        )
+      );
+      showFlash(
+        "alert",
+        error instanceof Error
+          ? `AI cover letter failed, so I used a basic local draft: ${error.message}`
+          : "AI cover letter failed, so I used a basic local draft."
+      );
+    }
   }
 
   function downloadCoverLetter(app: JobApplication) {
@@ -680,6 +818,7 @@ export default function Home() {
             onSubmit={submitPaste}
             onManual={openNewManual}
             onCancel={() => navigate("dashboard")}
+            busy={aiBusy === "parse"}
           />
         )}
 
@@ -715,6 +854,7 @@ export default function Home() {
             onCoverLetter={() => regenerateCoverLetter(selected)}
             onDownloadCoverLetter={() => downloadCoverLetter(selected)}
             entries={entries}
+            aiBusy={aiBusy}
           />
         )}
 
@@ -748,6 +888,8 @@ export default function Home() {
           <SettingsView
             profile={profile}
             setProfile={setProfile}
+            openRouterApiKey={openRouterApiKey}
+            setOpenRouterApiKey={setOpenRouterApiKey}
             onClear={() => {
               if (
                 confirm("Clear all saved job tracker data from this browser?")
@@ -755,6 +897,7 @@ export default function Home() {
                 setApplications([]);
                 setEntries(SAMPLE_ENTRIES);
                 setProfile(EMPTY_PROFILE);
+                setOpenRouterApiKey("");
                 showFlash("notice", "Local data cleared.");
               }
             }}
@@ -1012,12 +1155,14 @@ function NewFromPasteView({
   onSubmit,
   onManual,
   onCancel,
+  busy,
 }: {
   value: string;
   setValue: (s: string) => void;
   onSubmit: (e: FormEvent) => void;
   onManual: () => void;
   onCancel: () => void;
+  busy: boolean;
 }) {
   return (
     <div className="max-w-3xl mx-auto">
@@ -1053,9 +1198,10 @@ function NewFromPasteView({
         <div className="flex items-center gap-4">
           <button
             type="submit"
-            className="bg-gh-green hover:bg-gh-green-light text-white font-semibold px-6 py-2 rounded-lg transition-colors cursor-pointer"
+            disabled={busy}
+            className="bg-gh-green hover:bg-gh-green-light disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold px-6 py-2 rounded-lg transition-colors cursor-pointer"
           >
-            Parse & Create
+            {busy ? "Parsing with AI..." : "Parse & Create"}
           </button>
           <button
             type="button"
@@ -1282,6 +1428,7 @@ function ShowView({
   onCoverLetter,
   onDownloadCoverLetter,
   entries,
+  aiBusy,
 }: {
   app: JobApplication;
   onBack: () => void;
@@ -1292,6 +1439,7 @@ function ShowView({
   onCoverLetter: () => void;
   onDownloadCoverLetter: () => void;
   entries: ExperienceEntry[];
+  aiBusy: AiBusyState;
 }) {
   const [activeTab, setActiveTab] = useState<
     "cover-letter" | "resume" | "projects" | "details"
@@ -1341,7 +1489,8 @@ function ShowView({
         <div className="flex items-center gap-2">
           <button
             onClick={onRegenerate}
-            className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 transition-colors inline-flex items-center gap-1.5 shadow-sm"
+            disabled={aiBusy === "insights"}
+            className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-white border border-gray-300 hover:bg-gray-50 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed text-gray-700 transition-colors inline-flex items-center gap-1.5 shadow-sm"
           >
             <svg
               className="w-3.5 h-3.5"
@@ -1356,7 +1505,7 @@ function ShowView({
                 d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
               />
             </svg>
-            Regenerate
+            {aiBusy === "insights" ? "Running AI..." : "Regenerate"}
           </button>
           <button
             onClick={onEdit}
@@ -1660,9 +1809,10 @@ function ShowView({
                       </button>
                       <button
                         onClick={onCoverLetter}
-                        className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-gh-green hover:bg-gh-green-light text-white transition-colors shadow-sm"
+                        disabled={aiBusy === "cover_letter"}
+                        className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-gh-green hover:bg-gh-green-light disabled:bg-gray-300 disabled:cursor-not-allowed text-white transition-colors shadow-sm"
                       >
-                        Regenerate
+                        {aiBusy === "cover_letter" ? "Writing..." : "Regenerate"}
                       </button>
                     </>
                   )}
@@ -1682,9 +1832,10 @@ function ShowView({
                   </p>
                   <button
                     onClick={onCoverLetter}
-                    className="text-xs font-semibold px-4 py-2 rounded-lg bg-gh-green hover:bg-gh-green-light text-white transition-colors"
+                    disabled={aiBusy === "cover_letter"}
+                    className="text-xs font-semibold px-4 py-2 rounded-lg bg-gh-green hover:bg-gh-green-light disabled:bg-gray-300 disabled:cursor-not-allowed text-white transition-colors"
                   >
-                    Generate Cover Letter
+                    {aiBusy === "cover_letter" ? "Writing with AI..." : "Generate Cover Letter"}
                   </button>
                 </div>
               )}
@@ -2339,10 +2490,14 @@ function EntryEditCard({
 function SettingsView({
   profile,
   setProfile,
+  openRouterApiKey,
+  setOpenRouterApiKey,
   onClear,
 }: {
   profile: Profile;
   setProfile: (p: Profile) => void;
+  openRouterApiKey: string;
+  setOpenRouterApiKey: (key: string) => void;
   onClear: () => void;
 }) {
   const inputClass =
@@ -2385,6 +2540,26 @@ function SettingsView({
             </div>
           ))}
         </div>
+      </div>
+
+      <div className="bg-white border border-gh-border rounded-xl p-6 mb-6 shadow-sm">
+        <h2 className="text-lg font-semibold text-gray-900 mb-1">
+          AI Provider
+        </h2>
+        <p className="text-xs text-gray-500 mb-5">
+          Add an OpenRouter API key so paste parsing, insights, and cover letters
+          use real AI. The key is saved only in this browser.
+        </p>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          OpenRouter API key
+        </label>
+        <input
+          type="password"
+          value={openRouterApiKey}
+          onChange={(e) => setOpenRouterApiKey(e.target.value)}
+          placeholder="sk-or-v1-..."
+          className={inputClass}
+        />
       </div>
 
       <div className="bg-white border border-gh-border rounded-xl p-6 mb-6 shadow-sm">
