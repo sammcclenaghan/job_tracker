@@ -1,9 +1,18 @@
-# This file should ensure the existence of records required to run the application in every environment (production,
-# development, test). The code here should be idempotent so that it can be executed at any point in every environment.
-# The data can then be loaded with the bin/rails db:seed command (or created alongside the database with db:setup).
+# Seeds the primary database with real data captured from a backup.
 #
-# Example:
+# Data lives in db/seed_data.sql as `INSERT OR REPLACE` statements, so running
+# this multiple times is idempotent (rows are matched by primary key).
 #
-#   ["Action", "Comedy", "Drama", "Horror"].each do |genre_name|
-#     MovieGenre.find_or_create_by!(name: genre_name)
-#   end
+# Load it with: bin/rails db:seed   (or db:setup, which creates + seeds)
+
+seed_sql = Rails.root.join("db", "seed_data.sql")
+
+if seed_sql.exist?
+  ActiveRecord::Base.connection.raw_connection.execute_batch(seed_sql.read)
+  puts "Seeded from #{seed_sql.relative_path_from(Rails.root)}: " \
+       "#{JobApplication.count} job applications, " \
+       "#{ExperienceEntry.count} experience entries, " \
+       "#{Resume.count} resumes, #{Setting.count} settings."
+else
+  puts "No db/seed_data.sql found; nothing to seed."
+end
